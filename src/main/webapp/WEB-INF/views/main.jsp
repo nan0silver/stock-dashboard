@@ -43,7 +43,7 @@
     <div class="hero-content">
       <div class="hero-text">
         <h2 class="hero-title">Understand Bitcoin and Cryptocurrency Markets</h2>
-        <p class="hero-subtitle">Real-time insights, market analysis, and comprehensive information about the world's leading cryptocurrency</p>
+        <p class="hero-subtitle">암호화폐에 대한 실시간 인사이트, 시장 분석 및 종합적인 정보를 제공합니다.</p>
         <div class="hero-btns flex space-x-4">
           <button class="primary-btn">Live Bitcoin Price</button>
           <button class="secondary-btn">Learn Bitcoin Basics</button>
@@ -86,6 +86,84 @@
     </div>
   </div>
 </header>
+
+<div>
+  <a href="${pageContext.request.contextPath}/bitcoin">비트코인 대시보드</a>
+</div>
+
+<section id="price" class="section" style="background-color: white;">
+  <div class="container">
+    <h2 class="section-title">Live Bitcoin Price</h2>
+    <p class="section-content">Real-time Bitcoin price data, trading volume, and market comparisons.</p>
+    <!-- 여기에 실시간 가격 데이터와 차트 추가 -->
+    <div class="chart-container" style="width: 700px; margin: auto;">
+      <canvas id="priceChart"></canvas>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      Promise.all([
+        fetch("https://api.coingecko.com/api/v3/coins/dogecoin/market_chart?vs_currency=usd&days=7").then(response => response.json()),
+        fetch("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=7").then(response => response.json())
+      ])
+              .then(([dogeData, btcData]) => {
+                const ctx = document.getElementById('priceChart').getContext('2d');
+
+                // 날짜 레이블은 도지코인 데이터에서 가져옵니다
+                const labels = dogeData.prices.map(item => new Date(item[0]).toLocaleDateString());
+
+                // 비트코인 가격은 굉장히 높기 때문에, 데이터 스케일 조정을 위해 별도의 Y축을 사용합니다
+                new Chart(ctx, {
+                  type: 'line',
+                  data: {
+                    labels: labels,
+                    datasets: [
+                      {
+                        label: "도지코인 가격 (USD)",
+                        data: dogeData.prices.map(item => item[1]),
+                        borderColor: "red",
+                        fill: false,
+                        yAxisID: 'y-doge'
+                      },
+                      {
+                        label: "비트코인 가격 (USD)",
+                        data: btcData.prices.map(item => item[1]),
+                        borderColor: "orange",
+                        fill: false,
+                        yAxisID: 'y-btc'
+                      }
+                    ]
+                  },
+                  options: {
+                    scales: {
+                      'y-doge': {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                          display: true,
+                          text: '도지코인 가격 (USD)'
+                        }
+                      },
+                      'y-btc': {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                          display: true,
+                          text: '비트코인 가격 (USD)'
+                        },
+                        grid: {
+                          drawOnChartArea: false // 그리드 라인 중복 방지
+                        }
+                      }
+                    }
+                  }
+                });
+              });
+    </script>
+  </div>
+</section>
 
 <section id="introduction" class="section" style="background-color: white;">
   <div class="container">
@@ -206,79 +284,7 @@
 <%--    </div>--%>
 <%--</section>--%>
 
-<section id="price" class="section" style="background-color: white;">
-  <div class="container">
-    <h2 class="section-title">Live Bitcoin Price</h2>
-    <p class="section-content">Real-time Bitcoin price data, trading volume, and market comparisons.</p>
-    <!-- 여기에 실시간 가격 데이터와 차트 추가 -->
-    <div class="chart-container" style="width: 700px; margin: auto;">
-      <canvas id="priceChart"></canvas>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-      Promise.all([
-        fetch("https://api.coingecko.com/api/v3/coins/dogecoin/market_chart?vs_currency=usd&days=7").then(response => response.json()),
-        fetch("https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=7").then(response => response.json())
-      ])
-              .then(([dogeData, btcData]) => {
-                const ctx = document.getElementById('priceChart').getContext('2d');
-
-                // 날짜 레이블은 도지코인 데이터에서 가져옵니다
-                const labels = dogeData.prices.map(item => new Date(item[0]).toLocaleDateString());
-
-                // 비트코인 가격은 굉장히 높기 때문에, 데이터 스케일 조정을 위해 별도의 Y축을 사용합니다
-                new Chart(ctx, {
-                  type: 'line',
-                  data: {
-                    labels: labels,
-                    datasets: [
-                      {
-                        label: "도지코인 가격 (USD)",
-                        data: dogeData.prices.map(item => item[1]),
-                        borderColor: "red",
-                        fill: false,
-                        yAxisID: 'y-doge'
-                      },
-                      {
-                        label: "비트코인 가격 (USD)",
-                        data: btcData.prices.map(item => item[1]),
-                        borderColor: "orange",
-                        fill: false,
-                        yAxisID: 'y-btc'
-                      }
-                    ]
-                  },
-                  options: {
-                    scales: {
-                      'y-doge': {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
-                        title: {
-                          display: true,
-                          text: '도지코인 가격 (USD)'
-                        }
-                      },
-                      'y-btc': {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        title: {
-                          display: true,
-                          text: '비트코인 가격 (USD)'
-                        },
-                        grid: {
-                          drawOnChartArea: false // 그리드 라인 중복 방지
-                        }
-                      }
-                    }
-                  }
-                });
-              });
-    </script>
-  </div>
-</section>
 
 <section id="resources" class="section" style="background-color: #f9fafb;">
   <div class="container">

@@ -1,0 +1,4 @@
+CREATE TABLE bitcoin_prices (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    price DECIMAL(20, 2) NOT NULL,
+)
