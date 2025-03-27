@@ -1,6 +1,5 @@
 package org.example.stockdashboard.filter;
 
-
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
