@@ -23,7 +23,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/asset/**")
-                .addResourceLocations("/asset/"); // 또는 "classpath:/static/asset/"
+        registry.addResourceHandler("/assets/**")
+                .addResourceLocations("/assets/"); // 또는 "classpath:/static/asset/"
     }
 }
