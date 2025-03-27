@@ -11,8 +11,7 @@
   />
   <meta
           property="og:image"
-          content="https://github.com/nan0silver/TravelWorldcupGame/blob/main/images/London.jpg?raw=true
-      "
+          content="https://github.com/nan0silver/stock-dashboard/blob/main/src/main/webapp/assets/bitcoin_dashboard_OG_image.png?raw=true"
   />
   <title>Bitcoin Insights</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
