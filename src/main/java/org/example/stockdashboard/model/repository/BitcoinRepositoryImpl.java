@@ -2,11 +2,13 @@ package org.example.stockdashboard.model.repository;
 
 import org.example.stockdashboard.model.dto.BitcoinPrice;
 import org.example.stockdashboard.util.DotenvMixin;
+import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Repository
 public class BitcoinRepositoryImpl implements BitcoinRepository, DotenvMixin {
     final String url = dotenv.get("DB_URL");
     final String user = dotenv.get("DB_USER");
