@@ -50,6 +50,20 @@
   <canvas id="priceChart"></canvas>
 </div>
 
+<div class="news-container">
+  <h2>최신 비트코인 뉴스</h2>
+  <c:forEach items="${latestNews}" var="news">
+    <div class="news-item">
+      <div class="news-title">
+        <a href="${news.url()}" target="_blank">${news.title()}</a>
+      </div>
+      <div class="news-source">
+          ${news.source()} - ${news.publishedAt()}
+      </div>
+    </div>
+  </c:forEach>
+</div>
+
 <p><a href="/">메인으로 돌아가기</a></p>
 
 

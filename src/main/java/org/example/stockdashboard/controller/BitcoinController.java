@@ -2,6 +2,7 @@ package org.example.stockdashboard.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.example.stockdashboard.model.dto.BitcoinNews;
 import org.example.stockdashboard.model.dto.BitcoinPriceDto;
 import org.example.stockdashboard.service.BitcoinService;
 import org.springframework.stereotype.Controller;
@@ -37,6 +38,9 @@ public class BitcoinController {
         String priceHistoryJson = objectMapper.writeValueAsString(priceHistory);
         model.addAttribute("priceHistoryJson", priceHistoryJson);
 
+        //뉴스 데이터 추가
+        List<BitcoinNews> latestNews = bitcoinService.getLatestNews(5);
+        model.addAttribute("latestNews", latestNews);
 
         return "bitcoin/dashboard";
     }

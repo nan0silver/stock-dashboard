@@ -1,5 +1,6 @@
 package org.example.stockdashboard.model.repository;
 
+import org.example.stockdashboard.model.dto.BitcoinNews;
 import org.example.stockdashboard.model.dto.BitcoinPrice;
 import org.example.stockdashboard.util.DotenvMixin;
 import org.springframework.stereotype.Repository;
@@ -46,11 +47,11 @@ public class BitcoinRepositoryImpl implements BitcoinRepository, DotenvMixin {
     }
 
     @Override
-    public List<BitcoinPrice> getPriceHistory(int linit) throws Exception {
+    public List<BitcoinPrice> getPriceHistory(int limit) throws Exception {
         List<BitcoinPrice> prices = new ArrayList<>();
         try (Connection conn = getConnection(url, user, password)) {
             Statement stmt = conn.createStatement();
-            String query = "SELECT * FROM bitcoin_prices ORDER BY timestamp DESC LIMIT " + linit;
+            String query = "SELECT * FROM bitcoin_prices ORDER BY timestamp DESC LIMIT " + limit;
             ResultSet rs = stmt.executeQuery(query);
             while (rs.next()){
                 prices.add(new BitcoinPrice(
@@ -62,5 +63,41 @@ public class BitcoinRepositoryImpl implements BitcoinRepository, DotenvMixin {
             }
         }
         return prices;
+    }
+
+    @Override
+    public void saveNews(BitcoinNews news) throws Exception {
+        try (Connection conn = getConnection(url, user, password)) {
+            String query = "INSERT INTO bitcoin_news (title, url, source, published_at, created_at) VALUES (?,?,?,?,?)";
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            pstmt.setString(1, news.title());
+            pstmt.setString(2, news.url());
+            pstmt.setString(3, news.source());
+            pstmt.setTimestamp(4, Timestamp.valueOf(news.publishedAt()));
+            pstmt.setTimestamp(5, Timestamp.valueOf(news.createdAt()));
+            pstmt.executeUpdate();
+        }
+
+    }
+
+    @Override
+    public List<BitcoinNews> getLatestNews(int limit) throws Exception {
+        List<BitcoinNews> news = new ArrayList<>();
+        try (Connection conn = getConnection(url, user, password)) {
+            Statement stmt = conn.createStatement();
+            String query = "SELECT * FROM bitcoin_news ORDER BY published_at DESC LIMIT " + limit;
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next()){
+                news.add(new BitcoinNews(
+                        rs.getLong("id"),
+                        rs.getString("title"),
+                        rs.getString("url"),
+                        rs.getString("source"),
+                        rs.getTimestamp("published_at").toLocalDateTime(),
+                        rs.getTimestamp("created_at").toLocalDateTime()
+                ));
+            }
+        }
+        return news;
     }
 }
