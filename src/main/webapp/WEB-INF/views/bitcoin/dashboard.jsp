@@ -31,6 +31,33 @@
     }
     .positive { color: green; }
     .negative { color: red; }
+    .news-container {
+      background-color: #f5f5f5;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .news-item {
+      border-bottom: 1px solid #e0e0e0;
+      padding: 10px 0;
+    }
+    .news-item:last-child {
+      border-bottom: none;
+    }
+    .news-title a {
+      color: #2563eb;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .news-title a:hover {
+      text-decoration: underline;
+    }
+    .news-source {
+      font-size: 0.9em;
+      color: #666;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
@@ -52,16 +79,24 @@
 
 <div class="news-container">
   <h2>최신 비트코인 뉴스</h2>
-  <c:forEach items="${latestNews}" var="news">
-    <div class="news-item">
-      <div class="news-title">
-        <a href="${news.url()}" target="_blank">${news.title()}</a>
-      </div>
-      <div class="news-source">
-          ${news.source()} - ${news.publishedAt()}
-      </div>
+  <%
+    java.util.List<org.example.stockdashboard.model.dto.BitcoinNews> latestNews =
+            (java.util.List<org.example.stockdashboard.model.dto.BitcoinNews>)request.getAttribute("latestNews");
+    if(latestNews != null) {
+      for(org.example.stockdashboard.model.dto.BitcoinNews news : latestNews) {
+  %>
+  <div class="news-item">
+    <div class="news-title">
+      <a href="<%= news.url() %>" target="_blank"><%= news.title() %></a>
     </div>
-  </c:forEach>
+    <div class="news-source">
+      <%= news.source() %> - <%= news.publishedAt() %>
+    </div>
+  </div>
+  <%
+      }
+    }
+  %>
 </div>
 
 <p><a href="/">메인으로 돌아가기</a></p>
