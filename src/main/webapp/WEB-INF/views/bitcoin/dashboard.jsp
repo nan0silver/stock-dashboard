@@ -185,20 +185,33 @@
 
   // 차트 데이터 준비
   const priceHistory = JSON.parse('${priceHistoryJson}');
+  console.log("전체 가격 이력 데이터:",priceHistory);
   const predictions = JSON.parse('${predictionDataJson}');
   const sentimentData = JSON.parse('${sentimentDataJson}');
 
-  // 차트 데이터 가공
+  // 차트 데이터 준비
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+    if (!dateString || typeof dateString !== 'string') {
+      console.warn("유효하지 않은 날짜 문자열:", dateString);
+      return "날짜 오류";
+    }
+
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+    } catch (e) {
+      console.error("날짜 파싱 오류:", e);
+      return "날짜 오류";
+    }
   };
 
   // 가격 차트 데이터 준비
   const priceLabels = priceHistory.map(item => formatDate(item.timestamp)).reverse();
   const priceValues = priceHistory.map(item => item.price).reverse();
+  console.log("priceHistory END");
 
   // 예측 차트 데이터 준비
+  console.log("predictions START");
   const predictionLabels = predictions.map(item => formatDate(item.date));
   const predictionValues = predictions.map(item => item.predicted);
   const lowerBounds = predictions.map(item => item.lower);
