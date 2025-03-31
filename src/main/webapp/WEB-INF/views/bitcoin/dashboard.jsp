@@ -102,7 +102,11 @@
     <!-- 기술적 지표 -->
     <div class="bg-white rounded-lg shadow p-6">
       <div class="flex items-center mb-4">
-        <i data-lucide="trending-up" class="text-blue-600 mr-2"></i>
+        <!--<i data-lucide="trending-up" class="text-blue-600 mr-2"></i>-->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600 mr-2">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+          <polyline points="17 6 23 6 23 12"></polyline>
+        </svg>
         <h2 class="text-lg font-semibold text-gray-700">기술적 지표</h2>
       </div>
       <div class="space-y-2">
@@ -128,7 +132,12 @@
     <!-- 온체인 분석 -->
     <div class="bg-white rounded-lg shadow p-6">
       <div class="flex items-center mb-4">
-        <i data-lucide="wallet" class="text-blue-600 mr-2"></i>
+        <!--<i data-lucide="wallet" class="text-blue-600 mr-2"></i>-->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600 mr-2">
+          <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+          <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+          <path d="M18 12v4"></path>
+        </svg>
         <h2 class="text-lg font-semibold text-gray-700">온체인 분석</h2>
       </div>
       <div class="space-y-2">
@@ -154,7 +163,12 @@
     <!-- 리스크 지표 -->
     <div class="bg-white rounded-lg shadow p-6">
       <div class="flex items-center mb-4">
-        <i data-lucide="alert-triangle" class="text-blue-600 mr-2"></i>
+        <!--<i data-lucide="alert-triangle" class="text-blue-600 mr-2"></i>-->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600 mr-2">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path>
+          <path d="M12 9v4"></path>
+          <path d="M12 17h.01"></path>
+        </svg>
         <h2 class="text-lg font-semibold text-gray-700">리스크 지표</h2>
       </div>
       <div class="space-y-2">
@@ -181,7 +195,7 @@
 
 <script>
   // Lucide 아이콘 초기화
-  lucide.createIcons();
+  //lucide.createIcons();
 
   // 차트 데이터 준비
   const priceHistory = JSON.parse('${priceHistoryJson}');
@@ -189,7 +203,7 @@
   const predictions = JSON.parse('${predictionDataJson}');
   const sentimentData = JSON.parse('${sentimentDataJson}');
 
-  // 차트 데이터 준비
+  // 가격 차트 데이터 준비
   const formatDate = (dateString) => {
     if (!dateString || typeof dateString !== 'string') {
       console.warn("유효하지 않은 날짜 문자열:", dateString);
