@@ -107,4 +107,19 @@ public class BitcoinRepositoryImpl implements BitcoinRepository, DotenvMixin {
         }
         return news;
     }
+
+    @Override
+    public boolean existsByUrl(String url) throws Exception {
+        boolean exists = false;
+        try(Connection conn = getConnection(this.url, user, password)) {
+            String query = "SELECT COUNT(*) FROM bitcoin_news WHERE url = ?";
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            pstmt.setString(1, url);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()){
+                exists = rs.getInt(1) > 0;
+            }
+        }
+        return exists;
+    }
 }

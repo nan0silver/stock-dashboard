@@ -122,7 +122,8 @@ public class BitcoinServiceImpl implements BitcoinService{
             System.out.println("뉴스 저장 시도: " + title + " " + newsUrl + " " + publishedAt);
 
             // 이미 저장된 뉴스보다 새로운 뉴스만 저장
-            if (publishedAt.isAfter(latestSavedTime)){
+            // !bitcoinRepository.existsByUrl(newsUrl) -> 새 뉴스만 저장
+            if (publishedAt.isAfter(latestSavedTime) && !bitcoinRepository.existsByUrl(newsUrl)){
                 BitcoinNews bitcoinNews = new BitcoinNews(
                         0,
                         translatedTitle,
