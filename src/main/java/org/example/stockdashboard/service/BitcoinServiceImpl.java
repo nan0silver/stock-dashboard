@@ -2,9 +2,6 @@ package org.example.stockdashboard.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.cloud.translate.Translate;
-import com.google.cloud.translate.TranslateOptions;
-import com.google.cloud.translate.Translation;
 import org.example.stockdashboard.model.dto.BitcoinNews;
 import org.example.stockdashboard.model.dto.BitcoinPrice;
 import org.example.stockdashboard.model.dto.BitcoinPriceDto;
@@ -12,9 +9,13 @@ import org.example.stockdashboard.model.dto.SentimentAnalysisResult;
 import org.example.stockdashboard.model.repository.BitcoinRepository;
 import org.springframework.stereotype.Service;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -73,7 +74,7 @@ public class BitcoinServiceImpl implements BitcoinService{
 
     @Override
     public List<BitcoinNews> getLatestNews(int limit) throws Exception {
-
+        // 단순히 DB에서 최신 뉴스를 가져오는 역할
         return bitcoinRepository.getLatestNews(limit);
     }
 
@@ -102,9 +103,13 @@ public class BitcoinServiceImpl implements BitcoinService{
                 LocalDateTime.MIN : latestSavedNews.get(0).publishedAt();
 
         int newNewsCount = 0;
+        int newsLimit = 5;
 
 
         for (JsonNode newsItem : newsArray) {
+            if (newNewsCount >= newsLimit) {
+                break;
+            }
             String title = newsItem.get("title").asText();
             String translatedTitle = transalteToKorean(title);
 
@@ -128,6 +133,7 @@ public class BitcoinServiceImpl implements BitcoinService{
                 );
                 try {
                     bitcoinRepository.saveNews(bitcoinNews);
+                    newNewsCount++;
                     System.out.println("뉴스 저장 성공");
                 } catch (Exception e) {
                     System.err.println("뉴스 저장 실패: " + e.getMessage());
@@ -151,13 +157,47 @@ public class BitcoinServiceImpl implements BitcoinService{
     }
 
     private String transalteToKorean(String text) throws Exception {
-        Translate translate = TranslateOptions.getDefaultInstance().getService();
-        Translation translation = translate.translate(
-                text,
-                Translate.TranslateOption.sourceLanguage("en"),
-                Translate.TranslateOption.targetLanguage("ko")
-        );
-        return translation.getTranslatedText();
-    }
+        //https://libretranslate.com/
+        try {
+            String apiUrl = "https://libretranslate.com/translate";
+            URL url = new URL(apiUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            conn.setDoOutput(true);
 
+            // 파라미터 구성
+            String postData = "q=" + URLEncoder.encode(text, "UTF-8")
+                    + "&source=en&target=ko";
+
+            // 요청 전송
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = postData.getBytes("UTF-8");
+                os.write(input, 0, input.length);
+            }
+
+            // 응답 처리
+            if (conn.getResponseCode() == 200) {
+                StringBuilder response = new StringBuilder();
+                try (BufferedReader br = new BufferedReader(
+                        new InputStreamReader(conn.getInputStream(), "UTF-8"))) {
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        response.append(line);
+                    }
+                }
+
+                JsonNode rootNode = objectMapper.readTree(response.toString());
+                return rootNode.get("translatedText").asText();
+            } else {
+                System.err.println("번역 API 호출 실패: " + conn.getResponseCode());
+                return text;
+            }
+
+
+        } catch (Exception e) {
+            System.err.println("번역 중 오류 발생: " + e.getMessage());
+            return text;
+        }
+    }
 }
