@@ -18,7 +18,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
@@ -39,7 +38,6 @@ public class BitcoinServiceImpl implements BitcoinService{
         if (lastestPrice != null && lastestPrice.timestamp().isAfter(LocalDateTime.now().minusMinutes(5))) {
             return lastestPrice.toDto();
         }
-
 
         String urlString = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true";
         URL url = new URL(urlString);
@@ -117,23 +115,7 @@ public class BitcoinServiceImpl implements BitcoinService{
             bitcoinRepository.saveNews(bitcoinNews);
 
         }
-
         return bitcoinRepository.getLatestNews(limit);
-    }
-
-    @Override
-    public Map<String, Object> getTechnicalIndicators() throws Exception {
-        return Map.of();
-    }
-
-    @Override
-    public Map<String, Object> getOnchainMetrics() throws Exception {
-        return Map.of();
-    }
-
-    @Override
-    public Map<String, Object> getRiskMetrics() throws Exception {
-        return Map.of();
     }
 
     private String transalteToKorean(String text) throws Exception {
