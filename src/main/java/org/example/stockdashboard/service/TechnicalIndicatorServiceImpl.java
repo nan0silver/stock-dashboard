@@ -189,10 +189,6 @@ public class TechnicalIndicatorServiceImpl implements TechnicalIndicatorService,
         }
     }
 
-    @Override
-    public Map<String, Object> getOnchainMetrics() throws Exception {
-        return Map.of();
-    }
 
     @Override
     public Map<String, Object> getRiskMetrics() throws Exception {
