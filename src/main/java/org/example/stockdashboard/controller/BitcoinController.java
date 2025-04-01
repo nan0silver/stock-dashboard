@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.example.stockdashboard.model.dto.BitcoinNews;
 import org.example.stockdashboard.model.dto.BitcoinPriceDto;
 import org.example.stockdashboard.service.BitcoinService;
+import org.example.stockdashboard.service.OnchainMetricsService;
 import org.example.stockdashboard.service.TechnicalIndicatorService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -23,10 +24,12 @@ public class BitcoinController {
     private final BitcoinService bitcoinService;
     private final ObjectMapper objectMapper;
     private final TechnicalIndicatorService technicalIndicatorService;
+    private final OnchainMetricsService onchainMetricsService;
 
-    public BitcoinController(BitcoinService bitcoinService, TechnicalIndicatorService technicalIndicatorService) {
+    public BitcoinController(BitcoinService bitcoinService, TechnicalIndicatorService technicalIndicatorService, OnchainMetricsService onchainMetricsService) {
         this.bitcoinService = bitcoinService;
         this.technicalIndicatorService = technicalIndicatorService;
+        this.onchainMetricsService = onchainMetricsService;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
 
@@ -63,8 +66,8 @@ public class BitcoinController {
         Map<String, Object> technicalIndicators = technicalIndicatorService.getTechnicalIndicators();
         model.addAttribute("technicalIndicators", technicalIndicators);
 
-        // 온체인 분석 (샘플)
-        Map<String, Object> onchainMetrics = generateOnchainMetrics();
+        // 온체인 분석
+        Map<String, Object> onchainMetrics = onchainMetricsService.getOnchainMetrics();
         model.addAttribute("onchainMetrics", onchainMetrics);
 
         // 리스크 지표 (샘플)
@@ -117,29 +120,6 @@ public class BitcoinController {
         return predictions;
     }
 
-    // 기술적 지표 생성 (샘플)
-    private Map<String, Object> generateTechnicalIndicators() {
-        Map<String, Object> indicators = new HashMap<>();
-
-        indicators.put("rsi", 62.5);
-        indicators.put("macd", "상승");
-        indicators.put("bollingerBands", "상단 접근중");
-        indicators.put("movingAverage200d", "상회");
-
-        return indicators;
-    }
-
-    // 온체인 분석 데이터 생성 (샘플)
-    private Map<String, Object> generateOnchainMetrics() {
-        Map<String, Object> metrics = new HashMap<>();
-
-        metrics.put("activeWallets", 1250000);
-        metrics.put("avgTransactionFee", 12.80);
-        metrics.put("miningDifficulty", "증가중");
-        metrics.put("hashRate", "325 EH/s");
-
-        return metrics;
-    }
 
     // 리스크 지표 생성 (샘플)
     private Map<String, Object> generateRiskMetrics() {
