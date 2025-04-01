@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 
@@ -118,6 +119,21 @@ public class BitcoinServiceImpl implements BitcoinService{
         }
 
         return bitcoinRepository.getLatestNews(limit);
+    }
+
+    @Override
+    public Map<String, Object> getTechnicalIndicators() throws Exception {
+        return Map.of();
+    }
+
+    @Override
+    public Map<String, Object> getOnchainMetrics() throws Exception {
+        return Map.of();
+    }
+
+    @Override
+    public Map<String, Object> getRiskMetrics() throws Exception {
+        return Map.of();
     }
 
     private String transalteToKorean(String text) throws Exception {
