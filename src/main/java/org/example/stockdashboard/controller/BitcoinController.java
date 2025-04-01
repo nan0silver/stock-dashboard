@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Controller
-@RequestMapping("/bitcoin")
+@RequestMapping("/")
 public class BitcoinController {
 
     private final BitcoinService bitcoinService;
