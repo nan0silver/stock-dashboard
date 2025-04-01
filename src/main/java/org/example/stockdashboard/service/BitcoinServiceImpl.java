@@ -2,6 +2,9 @@ package org.example.stockdashboard.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.cloud.translate.Translate;
+import com.google.cloud.translate.TranslateOptions;
+import com.google.cloud.translate.Translation;
 import org.example.stockdashboard.model.dto.BitcoinNews;
 import org.example.stockdashboard.model.dto.BitcoinPrice;
 import org.example.stockdashboard.model.dto.BitcoinPriceDto;
@@ -92,6 +95,8 @@ public class BitcoinServiceImpl implements BitcoinService{
 
         for (JsonNode newsItem : newsArray) {
             String title = newsItem.get("title").asText();
+            String translatedTitle = transalteToKorean(title);
+
             String newsUrl = newsItem.get("url").asText();
             String source = newsItem.get("source").asText();
             long publishedEpoch = newsItem.get("published_on").asLong();
@@ -102,7 +107,7 @@ public class BitcoinServiceImpl implements BitcoinService{
 
             BitcoinNews bitcoinNews = new BitcoinNews(
                     0,
-                    title,
+                    translatedTitle,
                     newsUrl,
                     source,
                     publishedAt,
@@ -113,6 +118,16 @@ public class BitcoinServiceImpl implements BitcoinService{
         }
 
         return bitcoinRepository.getLatestNews(limit);
+    }
+
+    private String transalteToKorean(String text) throws Exception {
+        Translate translate = TranslateOptions.getDefaultInstance().getService();
+        Translation translation = translate.translate(
+                text,
+                Translate.TranslateOption.sourceLanguage("en"),
+                Translate.TranslateOption.targetLanguage("ko")
+        );
+        return translation.getTranslatedText();
     }
 
 }
