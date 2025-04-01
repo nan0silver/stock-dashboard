@@ -38,6 +38,7 @@ public class TechnicalIndicatorServiceImpl implements TechnicalIndicatorService,
     public Map<String, Object> getTechnicalIndicators() throws Exception {
         String apiKey = dotenv.get("COINCOMPARE_API_KEY");
         String url = "https://min-api.cryptocompare.com/data/v2/histoday?fsym=BTC&tsym=USD&limit=10&api_key=" + apiKey;
+        //https://developers.coindesk.com/documentation/legacy/Historical/dataHistoday
 
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
         JsonNode rootNode = parseJsonResponse(response.getBody());
