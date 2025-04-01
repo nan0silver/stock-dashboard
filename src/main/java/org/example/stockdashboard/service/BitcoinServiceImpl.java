@@ -8,6 +8,7 @@ import com.google.cloud.translate.Translation;
 import org.example.stockdashboard.model.dto.BitcoinNews;
 import org.example.stockdashboard.model.dto.BitcoinPrice;
 import org.example.stockdashboard.model.dto.BitcoinPriceDto;
+import org.example.stockdashboard.model.dto.SentimentAnalysisResult;
 import org.example.stockdashboard.model.repository.BitcoinRepository;
 import org.springframework.stereotype.Service;
 
@@ -116,6 +117,11 @@ public class BitcoinServiceImpl implements BitcoinService{
 
         }
         return bitcoinRepository.getLatestNews(limit);
+    }
+
+    @Override
+    public List<SentimentAnalysisResult> getNewsSentiment(int days) throws Exception {
+        return List.of();
     }
 
     private String transalteToKorean(String text) throws Exception {
