@@ -18,6 +18,7 @@ import java.net.URL;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -72,10 +73,13 @@ public class BitcoinServiceImpl implements BitcoinService{
 
     @Override
     public List<BitcoinNews> getLatestNews(int limit) throws Exception {
-        List<BitcoinNews> news = bitcoinRepository.getLatestNews(limit);
-        if (!news.isEmpty()){
-            return news;
-        }
+
+        return bitcoinRepository.getLatestNews(limit);
+    }
+
+    @Override
+    public void updateNewsFromAPI() throws Exception {
+        System.out.println("API에서 뉴스 업데이트 시작: " + LocalDateTime.now());
         String urlString = "https://min-api.cryptocompare.com/data/v2/news/?lang=EN&categories=BTC";
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -92,6 +96,13 @@ public class BitcoinServiceImpl implements BitcoinService{
         JsonNode rootNode = objectMapper.readTree(response.toString());
         JsonNode newsArray = rootNode.get("Data");
 
+        // 가장 최근에 저장된 뉴스의 시간 가져오기
+        List<BitcoinNews> latestSavedNews = bitcoinRepository.getLatestNews(1);
+        LocalDateTime latestSavedTime = latestSavedNews.isEmpty() ?
+                LocalDateTime.MIN : latestSavedNews.get(0).publishedAt();
+
+        int newNewsCount = 0;
+
 
         for (JsonNode newsItem : newsArray) {
             String title = newsItem.get("title").asText();
@@ -103,24 +114,39 @@ public class BitcoinServiceImpl implements BitcoinService{
             LocalDateTime publishedAt = Instant.ofEpochSecond(publishedEpoch)
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();
-            System.out.println(title + " " + newsUrl + " " + publishedAt);
+            System.out.println("뉴스 저장 시도: " + title + " " + newsUrl + " " + publishedAt);
 
-            BitcoinNews bitcoinNews = new BitcoinNews(
-                    0,
-                    translatedTitle,
-                    newsUrl,
-                    source,
-                    publishedAt,
-                    LocalDateTime.now()
-            );
-            bitcoinRepository.saveNews(bitcoinNews);
-
+            // 이미 저장된 뉴스보다 새로운 뉴스만 저장
+            if (publishedAt.isAfter(latestSavedTime)){
+                BitcoinNews bitcoinNews = new BitcoinNews(
+                        0,
+                        translatedTitle,
+                        newsUrl,
+                        source,
+                        publishedAt,
+                        LocalDateTime.now()
+                );
+                try {
+                    bitcoinRepository.saveNews(bitcoinNews);
+                    System.out.println("뉴스 저장 성공");
+                } catch (Exception e) {
+                    System.err.println("뉴스 저장 실패: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
         }
-        return bitcoinRepository.getLatestNews(limit);
+        System.out.println("뉴스 업데이트 완료. 추가된 뉴스: " + newNewsCount + "개");
     }
 
     @Override
     public List<SentimentAnalysisResult> getNewsSentiment(int days) throws Exception {
+        List<SentimentAnalysisResult> results = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+
+        for (int i = 0; i < days; i++) {
+            LocalDateTime date = now.minusDays(i);
+            //List<BitcoinNews> newsOfDay = bitcoinRepository.getNewsByDate(date);
+        }
         return List.of();
     }
 

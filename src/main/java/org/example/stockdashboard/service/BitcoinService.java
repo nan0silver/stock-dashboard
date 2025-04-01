@@ -10,5 +10,6 @@ public interface BitcoinService {
     BitcoinPriceDto getCurrentPrice() throws Exception;
     List<BitcoinPriceDto> getPriceHistory(int limit) throws Exception;
     List<BitcoinNews> getLatestNews(int limit) throws Exception;
+    void updateNewsFromAPI() throws Exception;
     List<SentimentAnalysisResult> getNewsSentiment(int days) throws Exception;
 }

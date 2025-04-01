@@ -28,10 +28,11 @@ public class BitcoinDataScheduler {
     @Scheduled(fixedRate = 3600000)
     public void updateNewsData() {
         try {
-            bitcoinService.getLatestNews(10);
-            System.out.println("News data updated at:" +java.time.LocalDateTime.now());
+            bitcoinService.updateNewsFromAPI();
+            System.out.println("News data updated at: " +java.time.LocalDateTime.now());
         }catch (Exception e) {
-            System.err.println("Error updating news data:" +e.getMessage());
+            System.err.println("Error updating news data: " +e.getMessage());
+            e.printStackTrace();
         }
     }
 }
