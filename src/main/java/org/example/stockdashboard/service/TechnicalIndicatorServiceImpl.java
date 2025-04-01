@@ -37,7 +37,7 @@ public class TechnicalIndicatorServiceImpl implements TechnicalIndicatorService,
     @Override
     public Map<String, Object> getTechnicalIndicators() throws Exception {
         String apiKey = dotenv.get("COINCOMPARE_API_KEY");
-        String url = "https://min-api.cryptocompare.com/data/v2/technical/indicators/RSI,MACD,BB?fsym=BTC&tsym=USD&limit=1&api_key=" + apiKey;
+        String url = "https://min-api.cryptocompare.com/data/v2/histoday?fsym=BTC&tsym=USD&limit=10&api_key=" + apiKey;
 
         ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
         JsonNode rootNode = parseJsonResponse(response.getBody());
@@ -70,6 +70,8 @@ public class TechnicalIndicatorServiceImpl implements TechnicalIndicatorService,
         indicators.put("macd", macdSignal);
         indicators.put("bollingerBands", bbSignal);
         indicators.put("movingAverage200d", ma200Signal);
+        System.out.println("rsi"+ rsi);
+        System.out.println("movingAverage200d"+ ma200Signal);
 
         return indicators;
     }

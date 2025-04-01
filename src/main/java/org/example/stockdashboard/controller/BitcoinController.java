@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.example.stockdashboard.model.dto.BitcoinNews;
 import org.example.stockdashboard.model.dto.BitcoinPriceDto;
 import org.example.stockdashboard.service.BitcoinService;
+import org.example.stockdashboard.service.TechnicalIndicatorService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,9 +22,11 @@ public class BitcoinController {
 
     private final BitcoinService bitcoinService;
     private final ObjectMapper objectMapper;
+    private final TechnicalIndicatorService technicalIndicatorService;
 
-    public BitcoinController(BitcoinService bitcoinService) {
+    public BitcoinController(BitcoinService bitcoinService, TechnicalIndicatorService technicalIndicatorService) {
         this.bitcoinService = bitcoinService;
+        this.technicalIndicatorService = technicalIndicatorService;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
 
@@ -56,8 +59,8 @@ public class BitcoinController {
         List<Map<String, Object>> sentimentData = generateSentimentData();
         model.addAttribute("sentimentDataJson", objectMapper.writeValueAsString(sentimentData));
 
-        // 기술적 지표 (샘플)
-        Map<String, Object> technicalIndicators = generateTechnicalIndicators();
+        // 기술적 지표
+        Map<String, Object> technicalIndicators = technicalIndicatorService.getTechnicalIndicators();
         model.addAttribute("technicalIndicators", technicalIndicators);
 
         // 온체인 분석 (샘플)
