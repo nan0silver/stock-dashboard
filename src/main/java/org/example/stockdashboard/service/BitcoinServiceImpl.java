@@ -7,7 +7,15 @@ import org.example.stockdashboard.model.dto.BitcoinPrice;
 import org.example.stockdashboard.model.dto.BitcoinPriceDto;
 import org.example.stockdashboard.model.dto.SentimentAnalysisResult;
 import org.example.stockdashboard.model.repository.BitcoinRepository;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpHeaders;
+
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -17,11 +25,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,9 +36,11 @@ public class BitcoinServiceImpl implements BitcoinService{
 
     private final BitcoinRepository bitcoinRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final RestTemplate restTemplate;
 
-    public BitcoinServiceImpl(BitcoinRepository bitcoinRepository) {
+    public BitcoinServiceImpl(BitcoinRepository bitcoinRepository, RestTemplate restTemplate) {
         this.bitcoinRepository = bitcoinRepository;
+        this.restTemplate = restTemplate;
     }
 
     @Override
@@ -150,11 +159,88 @@ public class BitcoinServiceImpl implements BitcoinService{
         List<SentimentAnalysisResult> results = new ArrayList<>();
         LocalDateTime now = LocalDateTime.now();
 
+        //최근 뉴스 가져오기
+        List<BitcoinNews> allNews = bitcoinRepository.getLatestNews(100);
+
+        Map<LocalDate, List<BitcoinNews>> newsByDate = allNews.stream()
+                .collect(Collectors.groupingBy(
+                        news -> news.publishedAt().toLocalDate()
+                ));
+
         for (int i = 0; i < days; i++) {
-            LocalDateTime date = now.minusDays(i);
-            //List<BitcoinNews> newsOfDay = bitcoinRepository.getNewsByDate(date);
+            LocalDate date = now.minusDays(i).toLocalDate();
+            List<BitcoinNews> newsOfDay = newsByDate.getOrDefault(date, Collections.emptyList());
+
+            if (newsOfDay.isEmpty()) {
+                continue;
+            }
+            double positive = 0, negative=0, neutral=0;
+
+            // 감정 분석 실행
+            for (BitcoinNews news : newsOfDay) {
+                String sentiment = analyzeSentiment(news.title());
+
+                if ("POSITIVE".equals(sentiment)) {
+                    positive++;
+                } else if ("NEGATIVE".equals(sentiment)) {
+                    negative++;
+                } else {
+                    neutral++;
+                }
+            }
+
+            // 총 뉴스 수에 대한 비율 계산
+            int total = newsOfDay.size();
+            results.add(new SentimentAnalysisResult(
+                    date.atStartOfDay(),
+                    (positive / total) * 100,
+                    (negative / total) * 100,
+                    (neutral / total) * 100
+            ));
         }
-        return List.of();
+
+        // 날짜순으로 정렬 (오래된 날짜부터)
+        results.sort(Comparator.comparing(SentimentAnalysisResult::date));
+
+        return results;
+    }
+
+    public String analyzeSentiment(String text){
+        try {
+            // 무료 감정 분석 API 호출 (예: Text Processing API)
+            String apiUrl = "https://text-processing.com/api/sentiment/";
+
+            // POST 요청 준비
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+            map.add("text", text);
+
+            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
+
+            // API 호출
+            ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, request, String.class);
+            JsonNode rootNode = objectMapper.readTree(response.getBody());
+
+            // 결과 해석
+            String label = rootNode.get("label").asText();
+            if ("pos".equals(label)) {
+                return "POSITIVE";
+            } else if ("neg".equals(label)) {
+                return "NEGATIVE";
+            } else {
+                return "NEUTRAL";
+            }
+        } catch (Exception e) {
+            // API 호출 실패 시 기본값 반환
+            // 단어 기반 간단한 감정 분석 대체
+            return simpleWordBasedSentiment(text);
+        }
+    }
+
+    private String simpleWordBasedSentiment(String text) {
+        return "";
     }
 
     private String transalteToKorean(String text) throws Exception {

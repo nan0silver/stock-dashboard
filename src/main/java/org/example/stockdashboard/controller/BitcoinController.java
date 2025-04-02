@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.example.stockdashboard.model.dto.BitcoinNews;
 import org.example.stockdashboard.model.dto.BitcoinPriceDto;
+import org.example.stockdashboard.model.dto.SentimentAnalysisResult;
 import org.example.stockdashboard.service.BitcoinService;
 import org.example.stockdashboard.service.OnchainMetricsService;
 import org.example.stockdashboard.service.TechnicalIndicatorService;
@@ -58,8 +59,19 @@ public class BitcoinController {
         List<BitcoinNews> latestNews = bitcoinService.getLatestNews(5);
         model.addAttribute("latestNews", latestNews);
 
-        // 감성 분석 데이터 (샘플)
-        List<Map<String, Object>> sentimentData = generateSentimentData();
+        // 각 뉴스에 감정 분석 결과 추가
+        List<Map<String, Object>> newsWithSentiment = new ArrayList<>();
+        for (BitcoinNews news : latestNews) {
+            String sentiment = bitcoinService.analyzeSentiment(news.title());
+            Map<String, Object> newsMap = new HashMap<>();
+            newsMap.put("news", news);
+            newsMap.put("sentiment", sentiment);
+            newsWithSentiment.add(newsMap);
+        }
+        model.addAttribute("newsWithSentiment", newsWithSentiment);
+
+        // 감성 분석 데이터
+        List<SentimentAnalysisResult> sentimentData = bitcoinService.getNewsSentiment(7);
         model.addAttribute("sentimentDataJson", objectMapper.writeValueAsString(sentimentData));
 
         // 기술적 지표
@@ -76,26 +88,7 @@ public class BitcoinController {
 
         return "bitcoin/dashboard";
     }
-    // 감성 분석 데이터 생성 (샘플)
-    private List<Map<String, Object>> generateSentimentData() {
-        List<Map<String, Object>> sentimentData = new ArrayList<>();
 
-        LocalDateTime now = LocalDateTime.now();
-        Random rand = new Random();
-
-        for (int i = 6; i >= 0; i--) {
-            Map<String, Object> data = new HashMap<>();
-            data.put("date", now.minusDays(i).toString());
-
-            data.put("positive", 50 + rand.nextInt(30));
-            data.put("negative", 20 + rand.nextInt(20));
-            data.put("neutral", 20 + rand.nextInt(20));
-
-            sentimentData.add(data);
-        }
-
-        return sentimentData;
-    }
 
     // 가격 예측 데이터 생성 (샘플)
     private List<Map<String, Object>> generatePredictionData(BigDecimal currentPrice) {

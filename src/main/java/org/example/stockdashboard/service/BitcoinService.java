@@ -12,4 +12,5 @@ public interface BitcoinService {
     List<BitcoinNews> getLatestNews(int limit) throws Exception;
     void updateNewsFromAPI() throws Exception;
     List<SentimentAnalysisResult> getNewsSentiment(int days) throws Exception;
+    String analyzeSentiment(String text);
 }
