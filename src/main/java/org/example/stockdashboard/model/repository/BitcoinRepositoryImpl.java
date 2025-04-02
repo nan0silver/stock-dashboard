@@ -67,6 +67,8 @@ public class BitcoinRepositoryImpl implements BitcoinRepository, DotenvMixin {
 
     @Override
     public void saveNews(BitcoinNews news) throws Exception {
+        System.out.println("saveNews 메서드 호출 - 제목: " + news.title());
+
         try (Connection conn = getConnection(url, user, password)) {
             String query = "INSERT INTO bitcoin_news (title, url, source, published_at, created_at) VALUES (?,?,?,?,?)";
             PreparedStatement pstmt = conn.prepareStatement(query);
@@ -76,6 +78,11 @@ public class BitcoinRepositoryImpl implements BitcoinRepository, DotenvMixin {
             pstmt.setTimestamp(4, Timestamp.valueOf(news.publishedAt()));
             pstmt.setTimestamp(5, Timestamp.valueOf(news.createdAt()));
             pstmt.executeUpdate();
+
+        } catch (SQLException e) {
+            System.err.println("SQL 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
 
     }
@@ -99,5 +106,20 @@ public class BitcoinRepositoryImpl implements BitcoinRepository, DotenvMixin {
             }
         }
         return news;
+    }
+
+    @Override
+    public boolean existsByUrl(String url) throws Exception {
+        boolean exists = false;
+        try(Connection conn = getConnection(this.url, user, password)) {
+            String query = "SELECT COUNT(*) FROM bitcoin_news WHERE url = ?";
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            pstmt.setString(1, url);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()){
+                exists = rs.getInt(1) > 0;
+            }
+        }
+        return exists;
     }
 }

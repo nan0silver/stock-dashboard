@@ -74,20 +74,44 @@
       <div style="height: 200px;">
         <canvas id="sentimentChart"></canvas>
       </div>
-
       <div class="mt-4">
         <h3 class="font-medium mb-2">최신 뉴스</h3>
         <div class="space-y-3">
-          <c:forEach items="${latestNews}" var="news">
+          <c:forEach items="${newsWithSentiment}" var="item">
             <div class="flex items-start border-b border-gray-200 pb-2">
-              <span class="inline-block w-3 h-3 mt-1 mr-2 rounded-full ${news.source().toLowerCase().contains('positive') ? 'bg-green-500' : news.source().toLowerCase().contains('negative') ? 'bg-red-500' : 'bg-gray-400'}"></span>
+              <!-- 감정 분석 결과에 따라 색상 변경 -->
+              <c:choose>
+                <c:when test="${item.sentiment eq 'POSITIVE'}">
+                  <span class="inline-block w-3 h-3 mt-1 mr-2 rounded-full bg-green-500" title="긍정적"></span>
+                </c:when>
+                <c:when test="${item.sentiment eq 'NEGATIVE'}">
+                  <span class="inline-block w-3 h-3 mt-1 mr-2 rounded-full bg-red-500" title="부정적"></span>
+                </c:when>
+                <c:otherwise>
+                  <span class="inline-block w-3 h-3 mt-1 mr-2 rounded-full bg-gray-400" title="중립적"></span>
+                </c:otherwise>
+              </c:choose>
               <div>
                 <h4 class="font-medium text-sm">
-                  <a href="${news.url()}" target="_blank" class="hover:text-blue-600">${news.title()}</a>
+                  <a href="${item.news.url()}" target="_blank" class="hover:text-blue-600">${item.news.title()}</a>
                 </h4>
                 <p class="text-xs text-gray-500">
-                  <fmt:parseDate value="${news.publishedAt()}" pattern="yyyy-MM-dd'T'HH:mm" var="newsDate" type="both"/>
-                  <fmt:formatDate value="${newsDate}" pattern="yyyy-MM-dd"/> | ${news.source()}
+                  <fmt:parseDate value="${item.news.publishedAt()}" pattern="yyyy-MM-dd'T'HH:mm" var="newsDate" type="both"/>
+                  <fmt:formatDate value="${newsDate}" pattern="yyyy-MM-dd"/> | ${item.news.source()}
+                  <!-- 감정 분석 결과 텍스트로 표시 -->
+                  | <span class="
+                <c:choose>
+                  <c:when test="${item.sentiment eq 'POSITIVE'}">text-green-600</c:when>
+                  <c:when test="${item.sentiment eq 'NEGATIVE'}">text-red-600</c:when>
+                  <c:otherwise>text-gray-600</c:otherwise>
+                </c:choose>
+              ">
+                <c:choose>
+                  <c:when test="${item.sentiment eq 'POSITIVE'}">긍정적</c:when>
+                  <c:when test="${item.sentiment eq 'NEGATIVE'}">부정적</c:when>
+                  <c:otherwise>중립적</c:otherwise>
+                </c:choose>
+              </span>
                 </p>
               </div>
             </div>
@@ -201,7 +225,7 @@
   const priceHistory = JSON.parse('${priceHistoryJson}');
   console.log("전체 가격 이력 데이터:",priceHistory);
   const predictions = JSON.parse('${predictionDataJson}');
-  const sentimentData = JSON.parse('${sentimentDataJson}');
+  //const sentimentData = JSON.parse('${sentimentDataJson}');
 
   // 가격 차트 데이터 준비
   const formatDate = (dateString) => {
@@ -286,26 +310,36 @@
     }
   });
 
-  // 감성 분석 차트 그리기
+  // 감정 분석 차트 그리기
   const sentimentCtx = document.getElementById('sentimentChart').getContext('2d');
+  const sentimentData = JSON.parse('${sentimentDataJson}');
+
+  // 날짜 형식 변환
+  const formattedSentimentData = sentimentData.map(item => ({
+    date: formatDate(item.date),
+    positive: item.positive,
+    negative: item.negative,
+    neutral: item.neutral
+  }));
+
   new Chart(sentimentCtx, {
     type: 'bar',
     data: {
-      labels: sentimentData.map(item => formatDate(item.date)),
+      labels: formattedSentimentData.map(item => item.date),
       datasets: [
         {
           label: '긍정적',
-          data: sentimentData.map(item => item.positive),
+          data: formattedSentimentData.map(item => item.positive),
           backgroundColor: '#22c55e'
         },
         {
           label: '부정적',
-          data: sentimentData.map(item => item.negative),
+          data: formattedSentimentData.map(item => item.negative),
           backgroundColor: '#ef4444'
         },
         {
           label: '중립적',
-          data: sentimentData.map(item => item.neutral),
+          data: formattedSentimentData.map(item => item.neutral),
           backgroundColor: '#94a3b8'
         }
       ]

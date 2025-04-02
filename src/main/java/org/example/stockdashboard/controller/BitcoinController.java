@@ -5,7 +5,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.example.stockdashboard.model.dto.BitcoinNews;
 import org.example.stockdashboard.model.dto.BitcoinPriceDto;
+import org.example.stockdashboard.model.dto.SentimentAnalysisResult;
 import org.example.stockdashboard.service.BitcoinService;
+import org.example.stockdashboard.service.OnchainMetricsService;
+import org.example.stockdashboard.service.TechnicalIndicatorService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,9 +24,13 @@ public class BitcoinController {
 
     private final BitcoinService bitcoinService;
     private final ObjectMapper objectMapper;
+    private final TechnicalIndicatorService technicalIndicatorService;
+    private final OnchainMetricsService onchainMetricsService;
 
-    public BitcoinController(BitcoinService bitcoinService) {
+    public BitcoinController(BitcoinService bitcoinService, TechnicalIndicatorService technicalIndicatorService, OnchainMetricsService onchainMetricsService) {
         this.bitcoinService = bitcoinService;
+        this.technicalIndicatorService = technicalIndicatorService;
+        this.onchainMetricsService = onchainMetricsService;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
 
@@ -52,16 +59,27 @@ public class BitcoinController {
         List<BitcoinNews> latestNews = bitcoinService.getLatestNews(5);
         model.addAttribute("latestNews", latestNews);
 
-        // 감성 분석 데이터 (샘플)
-        List<Map<String, Object>> sentimentData = generateSentimentData();
+        // 각 뉴스에 감정 분석 결과 추가
+        List<Map<String, Object>> newsWithSentiment = new ArrayList<>();
+        for (BitcoinNews news : latestNews) {
+            String sentiment = bitcoinService.analyzeSentiment(news.title());
+            Map<String, Object> newsMap = new HashMap<>();
+            newsMap.put("news", news);
+            newsMap.put("sentiment", sentiment);
+            newsWithSentiment.add(newsMap);
+        }
+        model.addAttribute("newsWithSentiment", newsWithSentiment);
+
+        // 감성 분석 데이터
+        List<SentimentAnalysisResult> sentimentData = bitcoinService.getNewsSentiment(7);
         model.addAttribute("sentimentDataJson", objectMapper.writeValueAsString(sentimentData));
 
-        // 기술적 지표 (샘플)
-        Map<String, Object> technicalIndicators = generateTechnicalIndicators();
+        // 기술적 지표
+        Map<String, Object> technicalIndicators = technicalIndicatorService.getTechnicalIndicators();
         model.addAttribute("technicalIndicators", technicalIndicators);
 
-        // 온체인 분석 (샘플)
-        Map<String, Object> onchainMetrics = generateOnchainMetrics();
+        // 온체인 분석
+        Map<String, Object> onchainMetrics = onchainMetricsService.getOnchainMetrics();
         model.addAttribute("onchainMetrics", onchainMetrics);
 
         // 리스크 지표 (샘플)
@@ -70,26 +88,7 @@ public class BitcoinController {
 
         return "bitcoin/dashboard";
     }
-    // 감성 분석 데이터 생성 (샘플)
-    private List<Map<String, Object>> generateSentimentData() {
-        List<Map<String, Object>> sentimentData = new ArrayList<>();
 
-        LocalDateTime now = LocalDateTime.now();
-        Random rand = new Random();
-
-        for (int i = 6; i >= 0; i--) {
-            Map<String, Object> data = new HashMap<>();
-            data.put("date", now.minusDays(i).toString());
-
-            data.put("positive", 50 + rand.nextInt(30));
-            data.put("negative", 20 + rand.nextInt(20));
-            data.put("neutral", 20 + rand.nextInt(20));
-
-            sentimentData.add(data);
-        }
-
-        return sentimentData;
-    }
 
     // 가격 예측 데이터 생성 (샘플)
     private List<Map<String, Object>> generatePredictionData(BigDecimal currentPrice) {
@@ -114,29 +113,6 @@ public class BitcoinController {
         return predictions;
     }
 
-    // 기술적 지표 생성 (샘플)
-    private Map<String, Object> generateTechnicalIndicators() {
-        Map<String, Object> indicators = new HashMap<>();
-
-        indicators.put("rsi", 62.5);
-        indicators.put("macd", "상승");
-        indicators.put("bollingerBands", "상단 접근중");
-        indicators.put("movingAverage200d", "상회");
-
-        return indicators;
-    }
-
-    // 온체인 분석 데이터 생성 (샘플)
-    private Map<String, Object> generateOnchainMetrics() {
-        Map<String, Object> metrics = new HashMap<>();
-
-        metrics.put("activeWallets", 1250000);
-        metrics.put("avgTransactionFee", 12.80);
-        metrics.put("miningDifficulty", "증가중");
-        metrics.put("hashRate", "325 EH/s");
-
-        return metrics;
-    }
 
     // 리스크 지표 생성 (샘플)
     private Map<String, Object> generateRiskMetrics() {
