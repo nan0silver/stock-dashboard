@@ -191,11 +191,18 @@ public class BitcoinServiceImpl implements BitcoinService{
 
             // 총 뉴스 수에 대한 비율 계산
             int total = newsOfDay.size();
+            double positiveCount = (positive / total) * 100;
+            int positiveCountInt = (int) Math.round(positiveCount);
+            double negativeCount = (negative / total) * 100;
+            int negativeCountInt = (int) Math.round(negativeCount);
+
+
+
             results.add(new SentimentAnalysisResult(
                     date.atStartOfDay(),
-                    (positive / total) * 100,
-                    (negative / total) * 100,
-                    (neutral / total) * 100
+                    positiveCountInt,
+                    negativeCountInt,
+                    100-(positiveCountInt+ negativeCountInt)
             ));
         }
 
@@ -207,7 +214,7 @@ public class BitcoinServiceImpl implements BitcoinService{
 
     public String analyzeSentiment(String text){
         try {
-            // 무료 감정 분석 API 호출 (예: Text Processing API)
+            // https://text-processing.com/docs/
             String apiUrl = "https://text-processing.com/api/sentiment/";
 
             // POST 요청 준비
@@ -240,7 +247,43 @@ public class BitcoinServiceImpl implements BitcoinService{
     }
 
     private String simpleWordBasedSentiment(String text) {
-        return "";
+        System.out.println("simpleWordBasedSentiment START");
+        String lowerText = text.toLowerCase();
+
+        // 긍정적 단어 목록
+        List<String> positiveWords = Arrays.asList(
+                "bullish", "surge", "soar", "gain", "rally", "rise", "jump", "positive",
+                "breakthrough", "support", "adopt", "growth", "opportunity", "innovation",
+                "up", "success", "profitable", "optimistic", "good", "great"
+        );
+
+        // 부정적 단어 목록
+        List<String> negativeWords = Arrays.asList(
+                "bearish", "plunge", "crash", "fall", "drop", "decline", "tumble", "negative",
+                "ban", "regulate", "warning", "risk", "volatile", "scam", "hack", "attack",
+                "down", "loss", "concern", "worry", "fear", "bad", "worse"
+        );
+
+        int positiveCount = countWords(lowerText, positiveWords);
+        int negativeCount = countWords(lowerText, negativeWords);
+
+        if (positiveCount > negativeCount) {
+            return "POSITIVE";
+        } else if (negativeCount > positiveCount) {
+            return "NEGATIVE";
+        } else {
+            return "NEUTRAL";
+        }
+    }
+
+    private int countWords(String text, List<String> words) {
+        int count = 0;
+        for (String word : words) {
+            if (text.contains(word)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private String transalteToKorean(String text) throws Exception {

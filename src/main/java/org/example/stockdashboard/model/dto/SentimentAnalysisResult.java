@@ -4,8 +4,8 @@ import java.time.LocalDateTime;
 
 public record SentimentAnalysisResult(
         LocalDateTime date,
-        double positive,
-        double negative,
-        double neutral
+        int positive,
+        int negative,
+        int neutral
 ) {
 }
