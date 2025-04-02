@@ -191,11 +191,18 @@ public class BitcoinServiceImpl implements BitcoinService{
 
             // 총 뉴스 수에 대한 비율 계산
             int total = newsOfDay.size();
+            double positiveCount = (positive / total) * 100;
+            int positiveCountInt = (int) Math.round(positiveCount);
+            double negativeCount = (negative / total) * 100;
+            int negativeCountInt = (int) Math.round(negativeCount);
+
+
+
             results.add(new SentimentAnalysisResult(
                     date.atStartOfDay(),
-                    (positive / total) * 100,
-                    (negative / total) * 100,
-                    (neutral / total) * 100
+                    positiveCountInt,
+                    negativeCountInt,
+                    100-(positiveCountInt+ negativeCountInt)
             ));
         }
 
@@ -207,7 +214,7 @@ public class BitcoinServiceImpl implements BitcoinService{
 
     public String analyzeSentiment(String text){
         try {
-            // 무료 감정 분석 API 호출 (예: Text Processing API)
+            // https://text-processing.com/docs/
             String apiUrl = "https://text-processing.com/api/sentiment/";
 
             // POST 요청 준비
