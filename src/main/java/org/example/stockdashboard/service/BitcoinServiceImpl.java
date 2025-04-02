@@ -240,7 +240,43 @@ public class BitcoinServiceImpl implements BitcoinService{
     }
 
     private String simpleWordBasedSentiment(String text) {
-        return "";
+        System.out.println("simpleWordBasedSentiment START");
+        String lowerText = text.toLowerCase();
+
+        // 긍정적 단어 목록
+        List<String> positiveWords = Arrays.asList(
+                "bullish", "surge", "soar", "gain", "rally", "rise", "jump", "positive",
+                "breakthrough", "support", "adopt", "growth", "opportunity", "innovation",
+                "up", "success", "profitable", "optimistic", "good", "great"
+        );
+
+        // 부정적 단어 목록
+        List<String> negativeWords = Arrays.asList(
+                "bearish", "plunge", "crash", "fall", "drop", "decline", "tumble", "negative",
+                "ban", "regulate", "warning", "risk", "volatile", "scam", "hack", "attack",
+                "down", "loss", "concern", "worry", "fear", "bad", "worse"
+        );
+
+        int positiveCount = countWords(lowerText, positiveWords);
+        int negativeCount = countWords(lowerText, negativeWords);
+
+        if (positiveCount > negativeCount) {
+            return "POSITIVE";
+        } else if (negativeCount > positiveCount) {
+            return "NEGATIVE";
+        } else {
+            return "NEUTRAL";
+        }
+    }
+
+    private int countWords(String text, List<String> words) {
+        int count = 0;
+        for (String word : words) {
+            if (text.contains(word)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private String transalteToKorean(String text) throws Exception {
