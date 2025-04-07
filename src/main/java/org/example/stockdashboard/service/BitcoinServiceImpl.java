@@ -212,37 +212,63 @@ public class BitcoinServiceImpl implements BitcoinService{
         return results;
     }
 
+    private final Map<String, String> sentimentCache = new HashMap<>();
     public String analyzeSentiment(String text){
+        if (sentimentCache.containsKey(text)){
+            return sentimentCache.get(text);
+        }
         try {
-            // https://text-processing.com/docs/
-            String apiUrl = "https://text-processing.com/api/sentiment/";
+            int maxRetries = 2;
+            int currentRetry = 0;
 
-            // POST 요청 준비
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            while (currentRetry < maxRetries) {
+                try {
+                    // https://text-processing.com/docs/
+                    String apiUrl = "https://text-processing.com/api/sentiment/";
 
-            MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-            map.add("text", text);
+                    // POST 요청 준비
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
+                    MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+                    map.add("text", text);
 
-            // API 호출
-            ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, request, String.class);
-            JsonNode rootNode = objectMapper.readTree(response.getBody());
+                    HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
 
-            // 결과 해석
-            String label = rootNode.get("label").asText();
-            if ("pos".equals(label)) {
-                return "POSITIVE";
-            } else if ("neg".equals(label)) {
-                return "NEGATIVE";
-            } else {
-                return "NEUTRAL";
+                    // API 호출
+                    ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, request, String.class);
+                    JsonNode rootNode = objectMapper.readTree(response.getBody());
+
+                    // 결과 해석
+                    String label = rootNode.get("label").asText();
+                    String result;
+                    if ("pos".equals(label)) {
+                        result = "POSITIVE";
+                    } else if ("neg".equals(label)) {
+                        result = "NEGATIVE";
+                    } else {
+                        result = "NEUTRAL";
+                    }
+
+                    sentimentCache.put(text, result);
+                    return result;
+                } catch (Exception e) {
+                    currentRetry++;
+                    if (currentRetry >= maxRetries){
+                        break;
+                    }
+                }
             }
+            String result = simpleWordBasedSentiment(text);
+            sentimentCache.put(text, result);
+            return result;
+
         } catch (Exception e) {
             // API 호출 실패 시 기본값 반환
             // 단어 기반 간단한 감정 분석 대체
-            return simpleWordBasedSentiment(text);
+            String result =  simpleWordBasedSentiment(text);
+            sentimentCache.put(text, result);
+            return result;
         }
     }
 
