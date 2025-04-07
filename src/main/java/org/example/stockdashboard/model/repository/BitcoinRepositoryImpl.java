@@ -70,7 +70,7 @@ public class BitcoinRepositoryImpl implements BitcoinRepository, DotenvMixin {
         System.out.println("saveNews 메서드 호출 - 제목: " + news.title());
 
         try (Connection conn = getConnection(url, user, password)) {
-            String query = "INSERT INTO bitcoin_news (title, url, source, published_at, created_at) VALUES (?,?,?,?,?,?)";
+            String query = "INSERT INTO bitcoin_news (title, url, source, published_at, created_at, sentiment) VALUES (?,?,?,?,?,?)";
             PreparedStatement pstmt = conn.prepareStatement(query);
             pstmt.setString(1, news.title());
             pstmt.setString(2, news.url());

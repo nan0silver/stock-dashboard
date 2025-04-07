@@ -8,14 +8,13 @@ import org.example.stockdashboard.model.dto.BitcoinPriceDto;
 import org.example.stockdashboard.model.dto.SentimentAnalysisResult;
 import org.example.stockdashboard.model.repository.BitcoinRepository;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.HttpHeaders;
-
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -29,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -181,7 +181,22 @@ public class BitcoinServiceImpl implements BitcoinService{
 
             // 감정 분석 실행
             for (BitcoinNews news : newsOfDay) {
-                String sentiment = analyzeSentiment(news.title());
+                String sentiment;
+
+                if (news.sentiment() != null && !news.sentiment().isEmpty()){
+                    sentiment = news.sentiment();
+                } else {
+                    sentiment = analyzeSentiment(news.title());
+                    final String finalSentiment = sentiment;
+                    CompletableFuture.runAsync(() -> {
+                        try {
+                            bitcoinRepository.updateNewsSentiment(news.id(), finalSentiment);
+                        } catch (Exception e) {
+                            System.err.println("감정 결과 업데이트 실패: " +e.getMessage());
+                        }
+                    });
+                }
+
 
                 if ("POSITIVE".equals(sentiment)) {
                     positive++;
