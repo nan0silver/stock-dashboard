@@ -197,6 +197,10 @@
       </div>
       <div class="space-y-2">
         <div class="flex justify-between">
+          <span class="text-gray-600">공포 탐욕 지수</span>
+          <span class="font-medium text-yellow-600">${riskMetrics.fearGreedIndex} : ${riskMetrics.marketSentiment}</span>
+        </div>
+        <div class="flex justify-between">
           <span class="text-gray-600">변동성 (30일)</span>
           <span class="font-medium">${riskMetrics.volatility30d}%</span>
         </div>
@@ -207,10 +211,6 @@
         <div class="flex justify-between">
           <span class="text-gray-600">시장 건전성</span>
           <span class="font-medium text-green-600">${riskMetrics.marketHealth}</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-gray-600">규제 리스크</span>
-          <span class="font-medium text-yellow-600">${riskMetrics.regulatoryRisk}</span>
         </div>
       </div>
     </div>

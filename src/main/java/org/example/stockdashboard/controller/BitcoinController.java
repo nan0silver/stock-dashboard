@@ -8,6 +8,7 @@ import org.example.stockdashboard.model.dto.BitcoinPriceDto;
 import org.example.stockdashboard.model.dto.SentimentAnalysisResult;
 import org.example.stockdashboard.service.BitcoinService;
 import org.example.stockdashboard.service.OnchainMetricsService;
+import org.example.stockdashboard.service.RiskMetricsService;
 import org.example.stockdashboard.service.TechnicalIndicatorService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,11 +27,17 @@ public class BitcoinController {
     private final ObjectMapper objectMapper;
     private final TechnicalIndicatorService technicalIndicatorService;
     private final OnchainMetricsService onchainMetricsService;
+    private final RiskMetricsService riskMetricsService;
 
-    public BitcoinController(BitcoinService bitcoinService, TechnicalIndicatorService technicalIndicatorService, OnchainMetricsService onchainMetricsService) {
+    public BitcoinController(BitcoinService bitcoinService,
+                             TechnicalIndicatorService technicalIndicatorService,
+                             OnchainMetricsService onchainMetricsService,
+                             RiskMetricsService riskMetricsService) {
         this.bitcoinService = bitcoinService;
         this.technicalIndicatorService = technicalIndicatorService;
         this.onchainMetricsService = onchainMetricsService;
+        this.riskMetricsService = riskMetricsService;
+
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
 
@@ -83,7 +90,7 @@ public class BitcoinController {
         model.addAttribute("onchainMetrics", onchainMetrics);
 
         // 리스크 지표 (샘플)
-        Map<String, Object> riskMetrics = generateRiskMetrics();
+        Map<String, Object> riskMetrics = riskMetricsService.getRiskMetrics();
         model.addAttribute("riskMetrics", riskMetrics);
 
         return "bitcoin/dashboard";
@@ -113,17 +120,5 @@ public class BitcoinController {
         return predictions;
     }
 
-
-    // 리스크 지표 생성 (샘플)
-    private Map<String, Object> generateRiskMetrics() {
-        Map<String, Object> metrics = new HashMap<>();
-
-        metrics.put("volatility30d", 4.2);
-        metrics.put("priceChangeRisk", "중간");
-        metrics.put("marketHealth", "양호");
-        metrics.put("regulatoryRisk", "중간");
-
-        return metrics;
-    }
 }
 
