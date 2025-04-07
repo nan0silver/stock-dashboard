@@ -70,13 +70,14 @@ public class BitcoinRepositoryImpl implements BitcoinRepository, DotenvMixin {
         System.out.println("saveNews 메서드 호출 - 제목: " + news.title());
 
         try (Connection conn = getConnection(url, user, password)) {
-            String query = "INSERT INTO bitcoin_news (title, url, source, published_at, created_at) VALUES (?,?,?,?,?)";
+            String query = "INSERT INTO bitcoin_news (title, url, source, published_at, created_at) VALUES (?,?,?,?,?,?)";
             PreparedStatement pstmt = conn.prepareStatement(query);
             pstmt.setString(1, news.title());
             pstmt.setString(2, news.url());
             pstmt.setString(3, news.source());
             pstmt.setTimestamp(4, Timestamp.valueOf(news.publishedAt()));
             pstmt.setTimestamp(5, Timestamp.valueOf(news.createdAt()));
+            pstmt.setString(6, news.sentiment());
             pstmt.executeUpdate();
 
         } catch (SQLException e) {
@@ -122,5 +123,19 @@ public class BitcoinRepositoryImpl implements BitcoinRepository, DotenvMixin {
             }
         }
         return exists;
+    }
+
+    @Override
+    public void updateNewsSentiment(long newsId, String sentiment) throws Exception {
+        try (Connection conn = getConnection(url, user, password)){
+            String query = "UPDATE bitcoin_news SET sentiment = ? WHERE id = ?";
+            PreparedStatement pstmt = conn.prepareStatement(query);
+            pstmt.setString(1, sentiment);
+            pstmt.setLong(2, newsId);
+            pstmt.executeUpdate();
+        }catch (SQLException e) {
+            System.err.println("뉴스 감정 업데이트 실패 : " +e.getMessage());
+            throw e;
+        }
     }
 }

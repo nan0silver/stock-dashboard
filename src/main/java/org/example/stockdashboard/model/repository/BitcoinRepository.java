@@ -12,4 +12,5 @@ public interface BitcoinRepository extends JDBCRepository{
     void saveNews(BitcoinNews news) throws Exception;
     List<BitcoinNews> getLatestNews(int limit) throws Exception;
     boolean existsByUrl(String url) throws Exception;
+    void updateNewsSentiment(long newsId, String sentiment) throws Exception;
 }
