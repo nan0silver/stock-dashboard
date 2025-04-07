@@ -17,10 +17,12 @@ public class RiskMetricsServiceImpl implements RiskMetricsService, DotenvMixin {
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
+    private final TechnicalIndicatorService technicalIndicatorService;
 
-    public RiskMetricsServiceImpl(WebClient.Builder webClientBuilder, ObjectMapper objectMapper){
+    public RiskMetricsServiceImpl(WebClient.Builder webClientBuilder, ObjectMapper objectMapper, TechnicalIndicatorService technicalIndicatorService){
         this.webClient = webClientBuilder.build();
         this.objectMapper = objectMapper;
+        this.technicalIndicatorService = technicalIndicatorService;
     }
 
     @Override
@@ -29,7 +31,6 @@ public class RiskMetricsServiceImpl implements RiskMetricsService, DotenvMixin {
 
         try {
             // Fear & Greed 인덱스 가져오기
-
             JsonNode fearGreedData = fetchFearGreedIndex()
                     .timeout(Duration.ofSeconds(10))
                     .retryWhen(Retry.backoff(3, Duration.ofSeconds(1)))
@@ -51,6 +52,26 @@ public class RiskMetricsServiceImpl implements RiskMetricsService, DotenvMixin {
             metrics.put("fearGreedIndex", fgIndex);
             metrics.put("marketSentiment", fgClassification);
 
+            // 기술 지표 서비스에서 가격 데이터 가져오기
+            Map<String, Object> technicalData = technicalIndicatorService.getTechnicalIndicators();
+
+            if (technicalData.containsKey("volatility30d")) {
+                metrics.put("volatility30d", technicalData.get("volatility30d"));
+            }else {
+                metrics.put("volatility30d", 4.2);
+            }
+
+            if (technicalData.containsKey("priceChangeRisk")) {
+                metrics.put("priceChangeRisk", technicalData.get("priceChangeRisk"));
+            }else {
+                metrics.put("priceChangeRisk", "중간");
+            }
+
+            // 시장 건정성
+            double volatility = (double) metrics.get("volatility30d");
+            String marketHealth = getMarketHealth(fgIndex, volatility);
+            metrics.put("marketHealth", marketHealth);
+
 
 
             return metrics;
@@ -58,6 +79,18 @@ public class RiskMetricsServiceImpl implements RiskMetricsService, DotenvMixin {
             System.err.println("리스크 지표 가져오기 실패 : " +e.getMessage());
             e.printStackTrace();
             return metrics;
+        }
+    }
+
+    private String getMarketHealth(int fearGreedIndex, double volatility) {
+        if (fearGreedIndex < 25 || volatility > 6.0) {
+            return "불안정";
+        } else if (fearGreedIndex > 60 && volatility < 3.0) {
+            return "매우 양호";
+        } else if (fearGreedIndex > 50 || volatility < 4.0) {
+            return "양호";
+        } else {
+            return "보통";
         }
     }
 

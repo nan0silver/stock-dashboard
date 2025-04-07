@@ -45,6 +45,8 @@ public class TechnicalIndicatorServiceImpl implements TechnicalIndicatorService,
         JsonNode dataNode = rootNode.get("Data").get("Data");
 
         List<BarData> priceData = new ArrayList<>();
+        List<Double> closePrices = new ArrayList<>();
+        double volatility = 4.2;
         for (JsonNode bar : dataNode) {
             priceData.add(new BarData(
                     bar.get("time").asLong() *1000,
@@ -54,7 +56,9 @@ public class TechnicalIndicatorServiceImpl implements TechnicalIndicatorService,
                     bar.get("close").asDouble(),
                     bar.get("volumefrom").asDouble()
             ));
+            closePrices.add(bar.get("close").asDouble());
         }
+        volatility = calculateVolatility(closePrices);
 
         // ta4j 바 시리즈 생성
         BarSeries series = createBarSeries(priceData);
@@ -71,8 +75,14 @@ public class TechnicalIndicatorServiceImpl implements TechnicalIndicatorService,
         indicators.put("macd", macdSignal);
         indicators.put("bollingerBands", bbSignal);
         indicators.put("movingAverage200d", ma200Signal);
-        System.out.println("rsi"+ rsi);
-        System.out.println("movingAverage200d"+ ma200Signal);
+        System.out.println("rsi : "+ rsi);
+        System.out.println("movingAverage200d : "+ ma200Signal);
+
+        // 리스크 지표 설정
+        indicators.put("volatility30d", Math.round(volatility * 100.0) / 100.0);
+        String priceChangeRisk = getPriceChangeRisk(volatility);
+        indicators.put("priceChangeRisk", priceChangeRisk);
+
 
         return indicators;
     }
@@ -189,9 +199,35 @@ public class TechnicalIndicatorServiceImpl implements TechnicalIndicatorService,
         }
     }
 
+    private double calculateVolatility(List<Double> prices) {
+        if (prices.size() < 2) {
+            return 0.0;
+        }
 
-    @Override
-    public Map<String, Object> getRiskMetrics() throws Exception {
-        return Map.of();
+        // 일일 수익률 계산
+        List<Double> returns = new ArrayList<>();
+        for (int i = 1; i < prices.size(); i++) {
+            double daliyReturn = (prices.get(i) - prices.get(i-1)) / prices.get(i-1) * 100;
+            returns.add(daliyReturn);
+        }
+
+        double mean = returns.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+
+        double variance = returns.stream()
+                .mapToDouble(x -> Math.pow(x - mean, 2))
+                .average()
+                .orElse(0.0);
+
+        return Math.sqrt(variance);
+    }
+
+    private String getPriceChangeRisk(double volatility) {
+        if (volatility > 5.0) {
+            return "높음";
+        } else if (volatility > 3.0) {
+            return "중간";
+        } else {
+            return "낮음";
+        }
     }
 }
