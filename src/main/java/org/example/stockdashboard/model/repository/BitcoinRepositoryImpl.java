@@ -101,7 +101,8 @@ public class BitcoinRepositoryImpl implements BitcoinRepository, DotenvMixin {
                         rs.getString("url"),
                         rs.getString("source"),
                         rs.getTimestamp("published_at").toLocalDateTime(),
-                        rs.getTimestamp("created_at").toLocalDateTime()
+                        rs.getTimestamp("created_at").toLocalDateTime(),
+                        rs.getString("sentiment")
                 ));
             }
         }

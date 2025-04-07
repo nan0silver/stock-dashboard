@@ -133,13 +133,16 @@ public class BitcoinServiceImpl implements BitcoinService{
             // 이미 저장된 뉴스보다 새로운 뉴스만 저장
             // !bitcoinRepository.existsByUrl(newsUrl) -> 새 뉴스만 저장
             if (publishedAt.isAfter(latestSavedTime) && !bitcoinRepository.existsByUrl(newsUrl)){
+                // 일단 단어 기반 감정 분석 수행
+                String sentiment = simpleWordBasedSentiment(title);
                 BitcoinNews bitcoinNews = new BitcoinNews(
                         0,
                         translatedTitle,
                         newsUrl,
                         source,
                         publishedAt,
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        sentiment
                 );
                 try {
                     bitcoinRepository.saveNews(bitcoinNews);
