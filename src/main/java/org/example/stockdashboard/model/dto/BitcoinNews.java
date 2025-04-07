@@ -8,6 +8,7 @@ public record BitcoinNews(
         String url,
         String source,
         LocalDateTime publishedAt,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String sentiment
 ) {
 }

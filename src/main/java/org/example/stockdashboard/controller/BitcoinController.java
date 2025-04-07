@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.example.stockdashboard.model.dto.BitcoinNews;
 import org.example.stockdashboard.model.dto.BitcoinPriceDto;
 import org.example.stockdashboard.model.dto.SentimentAnalysisResult;
+import org.example.stockdashboard.model.repository.BitcoinRepositoryImpl;
 import org.example.stockdashboard.service.BitcoinService;
 import org.example.stockdashboard.service.OnchainMetricsService;
 import org.example.stockdashboard.service.RiskMetricsService;
@@ -28,11 +29,12 @@ public class BitcoinController {
     private final TechnicalIndicatorService technicalIndicatorService;
     private final OnchainMetricsService onchainMetricsService;
     private final RiskMetricsService riskMetricsService;
+    private final BitcoinRepositoryImpl bitcoinRepositoryImpl;
 
     public BitcoinController(BitcoinService bitcoinService,
                              TechnicalIndicatorService technicalIndicatorService,
                              OnchainMetricsService onchainMetricsService,
-                             RiskMetricsService riskMetricsService) {
+                             RiskMetricsService riskMetricsService, BitcoinRepositoryImpl bitcoinRepositoryImpl) {
         this.bitcoinService = bitcoinService;
         this.technicalIndicatorService = technicalIndicatorService;
         this.onchainMetricsService = onchainMetricsService;
@@ -42,6 +44,7 @@ public class BitcoinController {
         this.objectMapper.registerModule(new JavaTimeModule());
 
         this.objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        this.bitcoinRepositoryImpl = bitcoinRepositoryImpl;
     }
 
     @GetMapping
@@ -69,7 +72,20 @@ public class BitcoinController {
         // 각 뉴스에 감정 분석 결과 추가
         List<Map<String, Object>> newsWithSentiment = new ArrayList<>();
         for (BitcoinNews news : latestNews) {
-            String sentiment = bitcoinService.analyzeSentiment(news.title());
+            String sentiment;
+
+            // 저장된 감정 분석 결과가 있으면 사용, 없으면 API 호출
+            if (news.sentiment() != null && !news.sentiment().isEmpty()){
+                sentiment = news.sentiment();
+            } else {
+                sentiment = bitcoinService.analyzeSentiment(news.title());
+                try {
+                    bitcoinRepositoryImpl.updateNewsSentiment(news.id(), sentiment);
+                }catch (Exception e) {
+                    System.err.println("감정 분석 결과 저장 실패: " + e.getMessage());
+                }
+            }
+
             Map<String, Object> newsMap = new HashMap<>();
             newsMap.put("news", news);
             newsMap.put("sentiment", sentiment);

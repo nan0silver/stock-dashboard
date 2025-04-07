@@ -8,14 +8,13 @@ import org.example.stockdashboard.model.dto.BitcoinPriceDto;
 import org.example.stockdashboard.model.dto.SentimentAnalysisResult;
 import org.example.stockdashboard.model.repository.BitcoinRepository;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.HttpHeaders;
-
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -29,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -133,13 +133,16 @@ public class BitcoinServiceImpl implements BitcoinService{
             // 이미 저장된 뉴스보다 새로운 뉴스만 저장
             // !bitcoinRepository.existsByUrl(newsUrl) -> 새 뉴스만 저장
             if (publishedAt.isAfter(latestSavedTime) && !bitcoinRepository.existsByUrl(newsUrl)){
+                // 일단 단어 기반 감정 분석 수행
+                String sentiment = simpleWordBasedSentiment(title);
                 BitcoinNews bitcoinNews = new BitcoinNews(
                         0,
                         translatedTitle,
                         newsUrl,
                         source,
                         publishedAt,
-                        LocalDateTime.now()
+                        LocalDateTime.now(),
+                        sentiment
                 );
                 try {
                     bitcoinRepository.saveNews(bitcoinNews);
@@ -178,7 +181,22 @@ public class BitcoinServiceImpl implements BitcoinService{
 
             // 감정 분석 실행
             for (BitcoinNews news : newsOfDay) {
-                String sentiment = analyzeSentiment(news.title());
+                String sentiment;
+
+                if (news.sentiment() != null && !news.sentiment().isEmpty()){
+                    sentiment = news.sentiment();
+                } else {
+                    sentiment = analyzeSentiment(news.title());
+                    final String finalSentiment = sentiment;
+                    CompletableFuture.runAsync(() -> {
+                        try {
+                            bitcoinRepository.updateNewsSentiment(news.id(), finalSentiment);
+                        } catch (Exception e) {
+                            System.err.println("감정 결과 업데이트 실패: " +e.getMessage());
+                        }
+                    });
+                }
+
 
                 if ("POSITIVE".equals(sentiment)) {
                     positive++;
@@ -212,37 +230,63 @@ public class BitcoinServiceImpl implements BitcoinService{
         return results;
     }
 
+    private final Map<String, String> sentimentCache = new HashMap<>();
     public String analyzeSentiment(String text){
+        if (sentimentCache.containsKey(text)){
+            return sentimentCache.get(text);
+        }
         try {
-            // https://text-processing.com/docs/
-            String apiUrl = "https://text-processing.com/api/sentiment/";
+            int maxRetries = 2;
+            int currentRetry = 0;
 
-            // POST 요청 준비
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            while (currentRetry < maxRetries) {
+                try {
+                    // https://text-processing.com/docs/
+                    String apiUrl = "https://text-processing.com/api/sentiment/";
 
-            MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
-            map.add("text", text);
+                    // POST 요청 준비
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
+                    MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+                    map.add("text", text);
 
-            // API 호출
-            ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, request, String.class);
-            JsonNode rootNode = objectMapper.readTree(response.getBody());
+                    HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(map, headers);
 
-            // 결과 해석
-            String label = rootNode.get("label").asText();
-            if ("pos".equals(label)) {
-                return "POSITIVE";
-            } else if ("neg".equals(label)) {
-                return "NEGATIVE";
-            } else {
-                return "NEUTRAL";
+                    // API 호출
+                    ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, request, String.class);
+                    JsonNode rootNode = objectMapper.readTree(response.getBody());
+
+                    // 결과 해석
+                    String label = rootNode.get("label").asText();
+                    String result;
+                    if ("pos".equals(label)) {
+                        result = "POSITIVE";
+                    } else if ("neg".equals(label)) {
+                        result = "NEGATIVE";
+                    } else {
+                        result = "NEUTRAL";
+                    }
+
+                    sentimentCache.put(text, result);
+                    return result;
+                } catch (Exception e) {
+                    currentRetry++;
+                    if (currentRetry >= maxRetries){
+                        break;
+                    }
+                }
             }
+            String result = simpleWordBasedSentiment(text);
+            sentimentCache.put(text, result);
+            return result;
+
         } catch (Exception e) {
             // API 호출 실패 시 기본값 반환
             // 단어 기반 간단한 감정 분석 대체
-            return simpleWordBasedSentiment(text);
+            String result =  simpleWordBasedSentiment(text);
+            sentimentCache.put(text, result);
+            return result;
         }
     }
 

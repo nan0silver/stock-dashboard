@@ -13,3 +13,5 @@ CREATE TABLE bitcoin_news (
                               published_at DATETIME NOT NULL,
                               created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE bitcoin_news ADD COLUMN sentiment VARCHAR(20);
