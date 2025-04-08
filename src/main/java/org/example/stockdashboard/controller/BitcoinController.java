@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @Controller
 @RequestMapping("/")
@@ -50,12 +51,51 @@ public class BitcoinController {
     @GetMapping
     public String dashboard(Model model) throws Exception {
         //현재 비트코인 가격 조회
-        BitcoinPriceDto currentPrice = bitcoinService.getCurrentPrice();
-        model.addAttribute("currentPrice", currentPrice);
+        CompletableFuture<BitcoinPriceDto> priceFuture = CompletableFuture.supplyAsync(() -> {
+            try {
+                return bitcoinService.getCurrentPrice();
+            } catch (Exception e) {
+                return BitcoinPriceDto.of(BigDecimal.ZERO, BigDecimal.ZERO);
+            }
+        });
 
         //가격 이력 조회
-        List<BitcoinPriceDto> priceHistory = bitcoinService.getPriceHistory(30);
+        CompletableFuture<List<BitcoinPriceDto>> priceHistoryFuture = CompletableFuture.supplyAsync(() -> {
+            try {
+                return bitcoinService.getPriceHistory(30);
+            } catch (Exception e) {
+                return new ArrayList<>();
+            }
+        });
+
+        //뉴스 데이터 추가
+        CompletableFuture<List<BitcoinNews>> newsFuture = CompletableFuture.supplyAsync(() -> {
+            try {
+                return bitcoinService.getLatestNews(5);
+            } catch (Exception e) {
+                return new ArrayList<>();
+            }
+        });
+
+        // 기술적 지표
+        CompletableFuture<Map<String, Object>> technicalFuture = CompletableFuture.supplyAsync(() -> {
+            try {
+                return technicalIndicatorService.getTechnicalIndicators();
+            } catch (Exception e) {
+                return new HashMap<>();
+            }
+        });
+
+        // 모든 CompletableFuture가 완료될 때까지 대기
+        BitcoinPriceDto currentPrice = priceFuture.get();
+        List<BitcoinPriceDto> priceHistory = priceHistoryFuture.get();
+        List<BitcoinNews> latestNews = newsFuture.get();
+        Map<String, Object> technicalIndicators = technicalFuture.get();
+
+
+        model.addAttribute("currentPrice", currentPrice);
         model.addAttribute("priceHistory", priceHistory);
+        model.addAttribute("latestNews", latestNews);
 
         //차트 데이터 생성
         String priceHistoryJson = objectMapper.writeValueAsString(priceHistory);
@@ -65,9 +105,6 @@ public class BitcoinController {
         List<Map<String, Object>> predictionData = generatePredictionData(currentPrice.price());
         model.addAttribute("predictionDataJson", objectMapper.writeValueAsString(predictionData));
 
-        //뉴스 데이터 추가
-        List<BitcoinNews> latestNews = bitcoinService.getLatestNews(5);
-        model.addAttribute("latestNews", latestNews);
 
         // 각 뉴스에 감정 분석 결과 추가
         List<Map<String, Object>> newsWithSentiment = new ArrayList<>();
@@ -98,7 +135,6 @@ public class BitcoinController {
         model.addAttribute("sentimentDataJson", objectMapper.writeValueAsString(sentimentData));
 
         // 기술적 지표
-        Map<String, Object> technicalIndicators = technicalIndicatorService.getTechnicalIndicators();
         model.addAttribute("technicalIndicators", technicalIndicators);
 
         // 온체인 분석
