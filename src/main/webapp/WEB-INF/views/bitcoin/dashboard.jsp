@@ -243,9 +243,12 @@
     }
   };
 
-  // 가격 차트 데이터 준비
-  const priceLabels = priceHistory.map(item => formatDate(item.timestamp)).reverse();
-  const priceValues = priceHistory.map(item => item.price).reverse();
+  // 날짜별 가격 데이터 그룹화
+  const groupedPriceHistory = groupByDate(priceHistory);
+  console.log("그룹화된 가격 데이터: ", groupedPriceHistory);
+  // 그룹화된 가격 차트 데이터 준비
+  const priceLabels = groupedPriceHistory.map(item => formatDate(item.timestamp)).reverse();
+  const priceValues = groupedPriceHistory.map(item => item.price).reverse();
   console.log("priceHistory END");
 
   // 예측 차트 데이터 준비
@@ -357,6 +360,21 @@
       }
     }
   });
+
+  // 날짜별로 데이터 그룹화하는 함수
+  function groupByDate(data) {
+    const grouped = {};
+
+    data.forEach(item => {
+      const date = new Date(item.timestamp).toISOString().split('T')[0];
+      if (!grouped[date]){
+        grouped[date] = item;
+      }
+    });
+
+    return Object.values(grouped);
+  }
+
 
   // 시간 범위 변경 함수
   function changeTimeRange(range) {
