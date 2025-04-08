@@ -61,8 +61,6 @@ graph TD
     OnchainService[OnchainMetricsService]
     RiskService[RiskMetricsService]
     end
-    
-    Services --> 핵심 서비스
 ```
 
 ### 클래스 다이어그램
