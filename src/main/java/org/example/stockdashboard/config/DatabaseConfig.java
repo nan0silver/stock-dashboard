@@ -13,18 +13,22 @@ public class DatabaseConfig implements DotenvMixin {
 
     @Bean
     public DataSource dataSource() {
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(dotenv.get("DB_URL"));
-        config.setUsername(dotenv.get("DB_USER"));
-        config.setPassword(dotenv.get("DB_PASSWORD"));
+        try {
+            // 드라이버 명시적 등록
+            Class.forName("com.mysql.cj.jdbc.Driver");
 
-        // 기본 연결 풀 설정
-        config.setMaximumPoolSize(10);
-        config.setMinimumIdle(5);
-        config.setIdleTimeout(300000); // 5분
-        config.setMaxLifetime(1800000); // 30분
-        config.setConnectionTimeout(30000); // 30초
+            HikariConfig config = new HikariConfig();
+            config.setJdbcUrl(dotenv.get("DB_URL"));
+            config.setUsername(dotenv.get("DB_USER"));
+            config.setPassword(dotenv.get("DB_PASSWORD"));
 
-        return new HikariDataSource(config);
+            // 기본 연결 풀 설정
+            config.setMaximumPoolSize(10);
+            config.setMinimumIdle(5);
+
+            return new HikariDataSource(config);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("MySQL JDBC Driver not found", e);
+        }
     }
 }
