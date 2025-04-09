@@ -77,20 +77,13 @@ public class BitcoinController {
             }
         });
 
-        // 기술적 지표
-        CompletableFuture<Map<String, Object>> technicalFuture = CompletableFuture.supplyAsync(() -> {
-            try {
-                return technicalIndicatorService.getTechnicalIndicators();
-            } catch (Exception e) {
-                return new HashMap<>();
-            }
-        });
+
 
         // 모든 CompletableFuture가 완료될 때까지 대기
         BitcoinPriceDto currentPrice = priceFuture.get();
         List<BitcoinPriceDto> priceHistory = priceHistoryFuture.get();
         List<BitcoinNews> latestNews = newsFuture.get();
-        Map<String, Object> technicalIndicators = technicalFuture.get();
+
 
 
         model.addAttribute("currentPrice", currentPrice);
@@ -134,7 +127,8 @@ public class BitcoinController {
         List<SentimentAnalysisResult> sentimentData = bitcoinService.getNewsSentiment(7);
         model.addAttribute("sentimentDataJson", objectMapper.writeValueAsString(sentimentData));
 
-        // 기술적 지표
+        // 기술적 지표 (DB에서만)
+        Map<String, Object> technicalIndicators = technicalIndicatorService.getTechnicalIndicators();
         model.addAttribute("technicalIndicators", technicalIndicators);
 
         // 온체인 분석

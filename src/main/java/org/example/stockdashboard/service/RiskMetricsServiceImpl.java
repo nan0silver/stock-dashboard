@@ -52,8 +52,8 @@ public class RiskMetricsServiceImpl implements RiskMetricsService, DotenvMixin {
             metrics.put("fearGreedIndex", fgIndex);
             metrics.put("marketSentiment", fgClassification);
 
-            // 기술 지표 서비스에서 가격 데이터 가져오기
-            Map<String, Object> technicalData = technicalIndicatorService.getTechnicalIndicators();
+            // 기술 지표 서비스에서 가격 데이터 가져오기 (API)
+            Map<String, Object> technicalData = technicalIndicatorService.fetchAndUpdateTechnicalIndicators();
 
             if (technicalData.containsKey("volatility30d")) {
                 metrics.put("volatility30d", technicalData.get("volatility30d"));
