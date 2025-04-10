@@ -6,6 +6,12 @@
 <head>
   <title>비트코인 대시보드</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="${pageContext.request.contextPath}/assets/favicon/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="${pageContext.request.contextPath}/assets/favicon/favicon.svg" />
+  <link rel="shortcut icon" href="${pageContext.request.contextPath}/assets/favicon/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="${pageContext.request.contextPath}/assets/favicon/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="BitcoinDashbord" />
+  <link rel="manifest" href="${pageContext.request.contextPath}/assets/favicon/site.webmanifest" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>

@@ -16,13 +16,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -125,7 +121,7 @@ public class BitcoinServiceImpl implements BitcoinService{
                 break;
             }
             String title = newsItem.get("title").asText();
-            String translatedTitle = transalteToKorean(title);
+            //String translatedTitle = transalteToKorean(title);
 
             String newsUrl = newsItem.get("url").asText();
             String source = newsItem.get("source").asText();
@@ -142,7 +138,7 @@ public class BitcoinServiceImpl implements BitcoinService{
                 String sentiment = simpleWordBasedSentiment(title);
                 BitcoinNews bitcoinNews = new BitcoinNews(
                         0,
-                        translatedTitle,
+                        title,
                         newsUrl,
                         source,
                         publishedAt,
@@ -335,48 +331,48 @@ public class BitcoinServiceImpl implements BitcoinService{
         return count;
     }
 
-    private String transalteToKorean(String text) throws Exception {
-        //https://libretranslate.com/
-        try {
-            String apiUrl = "https://libretranslate.com/translate";
-            URL url = new URL(apiUrl);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            conn.setDoOutput(true);
-
-            // 파라미터 구성
-            String postData = "q=" + URLEncoder.encode(text, "UTF-8")
-                    + "&source=en&target=ko";
-
-            // 요청 전송
-            try (OutputStream os = conn.getOutputStream()) {
-                byte[] input = postData.getBytes("UTF-8");
-                os.write(input, 0, input.length);
-            }
-
-            // 응답 처리
-            if (conn.getResponseCode() == 200) {
-                StringBuilder response = new StringBuilder();
-                try (BufferedReader br = new BufferedReader(
-                        new InputStreamReader(conn.getInputStream(), "UTF-8"))) {
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        response.append(line);
-                    }
-                }
-
-                JsonNode rootNode = objectMapper.readTree(response.toString());
-                return rootNode.get("translatedText").asText();
-            } else {
-                System.err.println("번역 API 호출 실패: " + conn.getResponseCode());
-                return text;
-            }
-
-
-        } catch (Exception e) {
-            System.err.println("번역 중 오류 발생: " + e.getMessage());
-            return text;
-        }
-    }
+//    private String transalteToKorean(String text) throws Exception {
+//        //https://libretranslate.com/
+//        try {
+//            String apiUrl = "https://libretranslate.com/translate";
+//            URL url = new URL(apiUrl);
+//            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+//            conn.setRequestMethod("POST");
+//            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+//            conn.setDoOutput(true);
+//
+//            // 파라미터 구성
+//            String postData = "q=" + URLEncoder.encode(text, "UTF-8")
+//                    + "&source=en&target=ko";
+//
+//            // 요청 전송
+//            try (OutputStream os = conn.getOutputStream()) {
+//                byte[] input = postData.getBytes("UTF-8");
+//                os.write(input, 0, input.length);
+//            }
+//
+//            // 응답 처리
+//            if (conn.getResponseCode() == 200) {
+//                StringBuilder response = new StringBuilder();
+//                try (BufferedReader br = new BufferedReader(
+//                        new InputStreamReader(conn.getInputStream(), "UTF-8"))) {
+//                    String line;
+//                    while ((line = br.readLine()) != null) {
+//                        response.append(line);
+//                    }
+//                }
+//
+//                JsonNode rootNode = objectMapper.readTree(response.toString());
+//                return rootNode.get("translatedText").asText();
+//            } else {
+//                System.err.println("번역 API 호출 실패: " + conn.getResponseCode());
+//                return text;
+//            }
+//
+//
+//        } catch (Exception e) {
+//            System.err.println("번역 중 오류 발생: " + e.getMessage());
+//            return text;
+//        }
+//    }
 }
