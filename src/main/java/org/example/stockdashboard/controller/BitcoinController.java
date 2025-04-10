@@ -50,12 +50,19 @@ public class BitcoinController {
     @GetMapping
     public String dashboard(Model model) throws Exception {
         //현재 비트코인 가격 조회
-        BitcoinPriceDto currentPrice = bitcoinService.getCurrentPrice();
+        BitcoinPriceDto currentPrice =  bitcoinService.getCurrentPrice();
         model.addAttribute("currentPrice", currentPrice);
 
         //가격 이력 조회
         List<BitcoinPriceDto> priceHistory = bitcoinService.getPriceHistory(30);
         model.addAttribute("priceHistory", priceHistory);
+
+        //뉴스 데이터 추가
+        List<BitcoinNews> latestNews = bitcoinService.getLatestNews(5);
+        model.addAttribute("latestNews", latestNews);
+        // 각 뉴스에 감정 분석 결과 추가
+        model.addAttribute("newsWithSentiment", convertNewsToMap(latestNews));
+
 
         //차트 데이터 생성
         String priceHistoryJson = objectMapper.writeValueAsString(priceHistory);
@@ -65,51 +72,35 @@ public class BitcoinController {
         List<Map<String, Object>> predictionData = generatePredictionData(currentPrice.price());
         model.addAttribute("predictionDataJson", objectMapper.writeValueAsString(predictionData));
 
-        //뉴스 데이터 추가
-        List<BitcoinNews> latestNews = bitcoinService.getLatestNews(5);
-        model.addAttribute("latestNews", latestNews);
-
-        // 각 뉴스에 감정 분석 결과 추가
-        List<Map<String, Object>> newsWithSentiment = new ArrayList<>();
-        for (BitcoinNews news : latestNews) {
-            String sentiment;
-
-            // 저장된 감정 분석 결과가 있으면 사용, 없으면 API 호출
-            if (news.sentiment() != null && !news.sentiment().isEmpty()){
-                sentiment = news.sentiment();
-            } else {
-                sentiment = bitcoinService.analyzeSentiment(news.title());
-                try {
-                    bitcoinRepositoryImpl.updateNewsSentiment(news.id(), sentiment);
-                }catch (Exception e) {
-                    System.err.println("감정 분석 결과 저장 실패: " + e.getMessage());
-                }
-            }
-
-            Map<String, Object> newsMap = new HashMap<>();
-            newsMap.put("news", news);
-            newsMap.put("sentiment", sentiment);
-            newsWithSentiment.add(newsMap);
-        }
-        model.addAttribute("newsWithSentiment", newsWithSentiment);
 
         // 감성 분석 데이터
         List<SentimentAnalysisResult> sentimentData = bitcoinService.getNewsSentiment(7);
         model.addAttribute("sentimentDataJson", objectMapper.writeValueAsString(sentimentData));
 
-        // 기술적 지표
+        // 기술적 지표 (DB에서만)
         Map<String, Object> technicalIndicators = technicalIndicatorService.getTechnicalIndicators();
         model.addAttribute("technicalIndicators", technicalIndicators);
 
-        // 온체인 분석
+        // 온체인 분석 (DB에서만)
         Map<String, Object> onchainMetrics = onchainMetricsService.getOnchainMetrics();
         model.addAttribute("onchainMetrics", onchainMetrics);
 
-        // 리스크 지표 (샘플)
+        // 리스크 지표 (DB에서만)
         Map<String, Object> riskMetrics = riskMetricsService.getRiskMetrics();
         model.addAttribute("riskMetrics", riskMetrics);
 
         return "bitcoin/dashboard";
+    }
+
+    private List<Map<String, Object>> convertNewsToMap(List<BitcoinNews> news) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (BitcoinNews item : news) {
+            Map<String, Object> newsMap = new HashMap<>();
+            newsMap.put("news", item);
+            newsMap.put("sentiment", item.sentiment() != null ? item.sentiment() : "NEUTRAL");
+            result.add(newsMap);
+        }
+        return result;
     }
 
 

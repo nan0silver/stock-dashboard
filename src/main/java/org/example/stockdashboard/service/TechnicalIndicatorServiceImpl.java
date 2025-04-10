@@ -3,6 +3,7 @@ package org.example.stockdashboard.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.stockdashboard.model.dto.BarData;
+import org.example.stockdashboard.model.repository.TechnicalRepository;
 import org.example.stockdashboard.util.DotenvMixin;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -28,14 +29,15 @@ import java.util.Map;
 public class TechnicalIndicatorServiceImpl implements TechnicalIndicatorService, DotenvMixin {
 
     private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final TechnicalRepository technicalRepository;
 
-    public TechnicalIndicatorServiceImpl(RestTemplate restTemplate) {
+    public TechnicalIndicatorServiceImpl(RestTemplate restTemplate, TechnicalRepository technicalRepository) {
         this.restTemplate = restTemplate;
+        this.technicalRepository = technicalRepository;
     }
 
     @Override
-    public Map<String, Object> getTechnicalIndicators() throws Exception {
+    public Map<String, Object> fetchAndUpdateTechnicalIndicators() throws Exception {
         String apiKey = dotenv.get("COINCOMPARE_API_KEY");
         String url = "https://min-api.cryptocompare.com/data/v2/histoday?fsym=BTC&tsym=USD&limit=10&api_key=" + apiKey;
         //https://developers.coindesk.com/documentation/legacy/Historical/dataHistoday
@@ -66,7 +68,7 @@ public class TechnicalIndicatorServiceImpl implements TechnicalIndicatorService,
         // 각 지표 계산
         double rsi = calculateRSI(series);
         String macdSignal = calculateMACDSignal(series);
-        String bbSignal = calsulateBollingerBandsSignal(series);
+        String bbSignal = calculateBollingerBandsSignal(series);
         String ma200Signal = calculateMA200Signal(series);
 
         // 결과 맵 생성 밎 반환
@@ -83,6 +85,20 @@ public class TechnicalIndicatorServiceImpl implements TechnicalIndicatorService,
         String priceChangeRisk = getPriceChangeRisk(volatility);
         indicators.put("priceChangeRisk", priceChangeRisk);
 
+        technicalRepository.saveTechnicalIndicator(indicators);
+
+        return indicators;
+    }
+
+    // DB에서만 데이터를 가져옴
+    @Override
+    public Map<String, Object> getTechnicalIndicators() throws Exception {
+        Map<String, Object> indicators = technicalRepository.getLatestTechnicalIndicator();
+
+        // DB에 데이터가 없는 경우 API를 호출하여 초기화
+        if (indicators.isEmpty()) {
+            indicators = fetchAndUpdateTechnicalIndicators();
+        }
 
         return indicators;
     }
@@ -149,7 +165,7 @@ public class TechnicalIndicatorServiceImpl implements TechnicalIndicatorService,
         }
     }
 
-    private String calsulateBollingerBandsSignal(BarSeries series){
+    private String calculateBollingerBandsSignal(BarSeries series){
         ClosePriceIndicator closePriceIndicator = new ClosePriceIndicator(series);
 
         // 20일 기간, 2 표준편차 사용
