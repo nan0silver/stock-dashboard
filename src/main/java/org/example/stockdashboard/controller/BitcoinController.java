@@ -54,7 +54,7 @@ public class BitcoinController {
         model.addAttribute("currentPrice", currentPrice);
 
         //가격 이력 조회 (DB)
-        List<BitcoinPriceDto> priceHistory = bitcoinService.getPriceHistory(30);
+        List<BitcoinPriceDto> priceHistory = bitcoinService.getPriceHistory(100);
         model.addAttribute("priceHistory", priceHistory);
 
         //뉴스 데이터 추가 (DB)

@@ -23,8 +23,8 @@ public class BitcoinDataScheduler {
         this.riskMetricsService = riskMetricsService;
     }
 
-    //5분마다 가격 데이터 업데이트
-    @Scheduled(fixedRate = 300000)
+    //1시간마다 가격 데이터 업데이트
+    @Scheduled(fixedRate = 3600000)
     public void updatePriceData() {
         try {
             bitcoinService.updateCurrentPrice();
