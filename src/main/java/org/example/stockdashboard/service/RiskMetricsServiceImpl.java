@@ -2,6 +2,7 @@ package org.example.stockdashboard.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.stockdashboard.model.repository.RiskMetricsRepository;
 import org.example.stockdashboard.util.DotenvMixin;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -18,15 +19,17 @@ public class RiskMetricsServiceImpl implements RiskMetricsService, DotenvMixin {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
     private final TechnicalIndicatorService technicalIndicatorService;
+    private final RiskMetricsRepository riskMetricsRepository;
 
-    public RiskMetricsServiceImpl(WebClient.Builder webClientBuilder, ObjectMapper objectMapper, TechnicalIndicatorService technicalIndicatorService){
+    public RiskMetricsServiceImpl(WebClient.Builder webClientBuilder, ObjectMapper objectMapper, TechnicalIndicatorService technicalIndicatorService, RiskMetricsRepository riskMetricsRepository){
         this.webClient = webClientBuilder.build();
         this.objectMapper = objectMapper;
         this.technicalIndicatorService = technicalIndicatorService;
+        this.riskMetricsRepository = riskMetricsRepository;
     }
 
     @Override
-    public Map<String, Object> getRiskMetrics() throws Exception {
+    public Map<String, Object> fetchAndUpdateRiskMetrics() throws Exception {
         Map<String, Object> metrics = new HashMap<>();
 
         try {
@@ -72,7 +75,8 @@ public class RiskMetricsServiceImpl implements RiskMetricsService, DotenvMixin {
             String marketHealth = getMarketHealth(fgIndex, volatility);
             metrics.put("marketHealth", marketHealth);
 
-
+            //DB에 저장
+            riskMetricsRepository.saveRiskMetrics(metrics);
 
             return metrics;
         } catch (Exception e){
@@ -80,6 +84,16 @@ public class RiskMetricsServiceImpl implements RiskMetricsService, DotenvMixin {
             e.printStackTrace();
             return metrics;
         }
+    }
+
+    @Override
+    public Map<String, Object> getRiskMetrics() throws Exception {
+        Map<String, Object> metrics = riskMetricsRepository.getLatestRiskMetrics();
+
+        if (metrics.isEmpty()) {
+            metrics = fetchAndUpdateRiskMetrics();
+        }
+        return metrics;
     }
 
     private String getMarketHealth(int fearGreedIndex, double volatility) {
