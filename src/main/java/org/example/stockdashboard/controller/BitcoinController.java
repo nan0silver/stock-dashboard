@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 @Controller
 @RequestMapping("/")
@@ -51,44 +50,19 @@ public class BitcoinController {
     @GetMapping
     public String dashboard(Model model) throws Exception {
         //현재 비트코인 가격 조회
-        CompletableFuture<BitcoinPriceDto> priceFuture = CompletableFuture.supplyAsync(() -> {
-            try {
-                return bitcoinService.getCurrentPrice();
-            } catch (Exception e) {
-                return BitcoinPriceDto.of(BigDecimal.ZERO, BigDecimal.ZERO);
-            }
-        });
+        BitcoinPriceDto currentPrice =  bitcoinService.getCurrentPrice();
+        model.addAttribute("currentPrice", currentPrice);
 
         //가격 이력 조회
-        CompletableFuture<List<BitcoinPriceDto>> priceHistoryFuture = CompletableFuture.supplyAsync(() -> {
-            try {
-                return bitcoinService.getPriceHistory(30);
-            } catch (Exception e) {
-                return new ArrayList<>();
-            }
-        });
+        List<BitcoinPriceDto> priceHistory = bitcoinService.getPriceHistory(30);
+        model.addAttribute("priceHistory", priceHistory);
 
         //뉴스 데이터 추가
-        CompletableFuture<List<BitcoinNews>> newsFuture = CompletableFuture.supplyAsync(() -> {
-            try {
-                return bitcoinService.getLatestNews(5);
-            } catch (Exception e) {
-                return new ArrayList<>();
-            }
-        });
-
-
-
-        // 모든 CompletableFuture가 완료될 때까지 대기
-        BitcoinPriceDto currentPrice = priceFuture.get();
-        List<BitcoinPriceDto> priceHistory = priceHistoryFuture.get();
-        List<BitcoinNews> latestNews = newsFuture.get();
-
-
-
-        model.addAttribute("currentPrice", currentPrice);
-        model.addAttribute("priceHistory", priceHistory);
+        List<BitcoinNews> latestNews = bitcoinService.getLatestNews(5);
         model.addAttribute("latestNews", latestNews);
+        // 각 뉴스에 감정 분석 결과 추가
+        model.addAttribute("newsWithSentiment", convertNewsToMap(latestNews));
+
 
         //차트 데이터 생성
         String priceHistoryJson = objectMapper.writeValueAsString(priceHistory);
@@ -98,30 +72,6 @@ public class BitcoinController {
         List<Map<String, Object>> predictionData = generatePredictionData(currentPrice.price());
         model.addAttribute("predictionDataJson", objectMapper.writeValueAsString(predictionData));
 
-
-        // 각 뉴스에 감정 분석 결과 추가
-        List<Map<String, Object>> newsWithSentiment = new ArrayList<>();
-        for (BitcoinNews news : latestNews) {
-            String sentiment;
-
-            // 저장된 감정 분석 결과가 있으면 사용, 없으면 API 호출
-            if (news.sentiment() != null && !news.sentiment().isEmpty()){
-                sentiment = news.sentiment();
-            } else {
-                sentiment = bitcoinService.analyzeSentiment(news.title());
-                try {
-                    bitcoinRepositoryImpl.updateNewsSentiment(news.id(), sentiment);
-                }catch (Exception e) {
-                    System.err.println("감정 분석 결과 저장 실패: " + e.getMessage());
-                }
-            }
-
-            Map<String, Object> newsMap = new HashMap<>();
-            newsMap.put("news", news);
-            newsMap.put("sentiment", sentiment);
-            newsWithSentiment.add(newsMap);
-        }
-        model.addAttribute("newsWithSentiment", newsWithSentiment);
 
         // 감성 분석 데이터
         List<SentimentAnalysisResult> sentimentData = bitcoinService.getNewsSentiment(7);
@@ -135,11 +85,22 @@ public class BitcoinController {
         Map<String, Object> onchainMetrics = onchainMetricsService.getOnchainMetrics();
         model.addAttribute("onchainMetrics", onchainMetrics);
 
-        // 리스크 지표 (샘플)
+        // 리스크 지표 (DB에서만)
         Map<String, Object> riskMetrics = riskMetricsService.getRiskMetrics();
         model.addAttribute("riskMetrics", riskMetrics);
 
         return "bitcoin/dashboard";
+    }
+
+    private List<Map<String, Object>> convertNewsToMap(List<BitcoinNews> news) {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (BitcoinNews item : news) {
+            Map<String, Object> newsMap = new HashMap<>();
+            newsMap.put("news", item);
+            newsMap.put("sentiment", item.sentiment() != null ? item.sentiment() : "NEUTRAL");
+            result.add(newsMap);
+        }
+        return result;
     }
 
 
