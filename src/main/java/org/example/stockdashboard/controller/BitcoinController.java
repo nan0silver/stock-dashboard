@@ -49,20 +49,19 @@ public class BitcoinController {
 
     @GetMapping
     public String dashboard(Model model) throws Exception {
-        //현재 비트코인 가격 조회
-        BitcoinPriceDto currentPrice =  bitcoinService.getCurrentPrice();
+        //현재 비트코인 가격 조회 (DB에서만 조회)
+        BitcoinPriceDto currentPrice =  bitcoinService.getCurrentPriceFromDB();
         model.addAttribute("currentPrice", currentPrice);
 
-        //가격 이력 조회
-        List<BitcoinPriceDto> priceHistory = bitcoinService.getPriceHistory(30);
+        //가격 이력 조회 (DB)
+        List<BitcoinPriceDto> priceHistory = bitcoinService.getPriceHistory(100);
         model.addAttribute("priceHistory", priceHistory);
 
-        //뉴스 데이터 추가
+        //뉴스 데이터 추가 (DB)
         List<BitcoinNews> latestNews = bitcoinService.getLatestNews(5);
         model.addAttribute("latestNews", latestNews);
         // 각 뉴스에 감정 분석 결과 추가
         model.addAttribute("newsWithSentiment", convertNewsToMap(latestNews));
-
 
         //차트 데이터 생성
         String priceHistoryJson = objectMapper.writeValueAsString(priceHistory);

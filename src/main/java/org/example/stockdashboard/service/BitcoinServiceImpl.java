@@ -44,12 +44,17 @@ public class BitcoinServiceImpl implements BitcoinService{
     }
 
     @Override
-    public BitcoinPriceDto getCurrentPrice() throws Exception {
-
-        BitcoinPrice lastestPrice = bitcoinRepository.getLastestPrice();
-        if (lastestPrice != null && lastestPrice.timestamp().isAfter(LocalDateTime.now().minusMinutes(5))) {
-            return lastestPrice.toDto();
+    public BitcoinPriceDto getCurrentPriceFromDB() throws Exception{
+        BitcoinPrice latestPrice = bitcoinRepository.getLastestPrice();
+        if (latestPrice != null) {
+            return latestPrice.toDto();
         }
+        // DB에 데이터가 없는 경우에만 API 호출
+        return updateCurrentPrice();
+    }
+
+    @Override
+    public BitcoinPriceDto updateCurrentPrice() throws Exception {
 
         String urlString = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true";
         URL url = new URL(urlString);

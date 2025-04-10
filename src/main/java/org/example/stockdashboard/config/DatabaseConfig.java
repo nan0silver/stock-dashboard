@@ -25,6 +25,9 @@ public class DatabaseConfig implements DotenvMixin {
             // 기본 연결 풀 설정
             config.setMaximumPoolSize(10);
             config.setMinimumIdle(5);
+            config.setIdleTimeout(300000); // 5분
+            config.setMaxLifetime(1800000); // 30분
+            config.setConnectionTimeout(30000); // 30초
 
             return new HikariDataSource(config);
         } catch (ClassNotFoundException e) {
