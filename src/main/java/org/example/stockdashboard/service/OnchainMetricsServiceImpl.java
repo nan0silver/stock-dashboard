@@ -2,6 +2,7 @@ package org.example.stockdashboard.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.example.stockdashboard.model.repository.OnchainMetricsRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -14,13 +15,15 @@ public class OnchainMetricsServiceImpl implements OnchainMetricsService{
 
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final OnchainMetricsRepository onchainMetricsRepository;
 
-    public OnchainMetricsServiceImpl(RestTemplate restTemplate) {
+    public OnchainMetricsServiceImpl(RestTemplate restTemplate, OnchainMetricsRepository onchainMetricsRepository) {
         this.restTemplate = restTemplate;
+        this.onchainMetricsRepository = onchainMetricsRepository;
     }
 
     @Override
-    public Map<String, Object> getOnchainMetrics() throws Exception {
+    public Map<String, Object> fetchAndUpdateOnchainMetrics() throws Exception {
         Map<String, Object> metrics = new HashMap<>();
 
         try{
@@ -39,10 +42,26 @@ public class OnchainMetricsServiceImpl implements OnchainMetricsService{
             // 해시레이트
             String hashRate = formatHashRate(stats.get("hash_rate").asDouble());
             metrics.put("hashRate", hashRate);
+
+            //DB에 저장
+            onchainMetricsRepository.saveOnchainMetrics(metrics);
+
             return metrics;
         }catch(Exception e) {
             return getFallbackMetrics();
         }
+    }
+
+    @Override
+    public Map<String, Object> getOnchainMetrics() throws Exception {
+        Map<String, Object> metrics = onchainMetricsRepository.getLatestOnchainMetrics();
+
+        // DB에 데이터가 없는 경우 API 호출하여 데이터 가져오기
+        if (metrics.isEmpty()) {
+            metrics = fetchAndUpdateOnchainMetrics();
+        }
+
+        return metrics;
     }
 
     private double calculateAvgTransactionFee(JsonNode stats) {

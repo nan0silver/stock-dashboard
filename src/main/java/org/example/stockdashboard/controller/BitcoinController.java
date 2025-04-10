@@ -131,7 +131,7 @@ public class BitcoinController {
         Map<String, Object> technicalIndicators = technicalIndicatorService.getTechnicalIndicators();
         model.addAttribute("technicalIndicators", technicalIndicators);
 
-        // 온체인 분석
+        // 온체인 분석 (DB에서만)
         Map<String, Object> onchainMetrics = onchainMetricsService.getOnchainMetrics();
         model.addAttribute("onchainMetrics", onchainMetrics);
 
