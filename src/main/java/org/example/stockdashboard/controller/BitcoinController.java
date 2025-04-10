@@ -29,7 +29,6 @@ public class BitcoinController {
     private final TechnicalIndicatorService technicalIndicatorService;
     private final OnchainMetricsService onchainMetricsService;
     private final RiskMetricsService riskMetricsService;
-    private final BitcoinRepositoryImpl bitcoinRepositoryImpl;
 
     public BitcoinController(BitcoinService bitcoinService,
                              TechnicalIndicatorService technicalIndicatorService,
@@ -44,7 +43,6 @@ public class BitcoinController {
         this.objectMapper.registerModule(new JavaTimeModule());
 
         this.objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-        this.bitcoinRepositoryImpl = bitcoinRepositoryImpl;
     }
 
     @GetMapping
