@@ -27,7 +27,7 @@ public class BitcoinDataScheduler {
     @Scheduled(fixedRate = 300000)
     public void updatePriceData() {
         try {
-            bitcoinService.getCurrentPrice();
+            bitcoinService.updateCurrentPrice();
             System.out.println("Price data updated at:" + java.time.LocalDateTime.now());
         } catch (Exception e) {
             System.err.println("Error updating price data:" +e.getMessage());
